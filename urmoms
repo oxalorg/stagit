@@ -15,15 +15,16 @@ header() {
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <meta http-equiv="Content-Language" content="en" />
-<title>${description}</title>
+<title>${name} - ${description}</title>
 <base href="${baseurl}" />
 <link rel="stylesheet" type="text/css" href="style.css" />
 </head>
 <body>
 <center>
-<h1><img src="logo.png" alt="" /> ${description}</h1>
-<a href="index.html">Tree</a> |
+<h1><img src="logo.png" alt="" /> ${name}</h1>
+<span class="desc">${description}</span><br/>
 <a href="log.html">Log</a> |
+<a href="files.html">Files</a> |
 <a href="stats.html">Stats</a> |
 <a href="readme.html">README</a> |
 <a href="license.html">LICENSE</a>
@@ -43,57 +44,67 @@ footer() {
 !__EOF__
 }
 
+# usage: repodir and htmldir must be set.
 if test x"$1" = x"" || test x"$2" = x""; then
 	usage
 fi
 
+# make absolute path to htmldir.
+htmldir="$(readlink -f $2)"
+mkdir -p "${htmldir}"
+
 # repodir must be a directory to go to.
 cd "$1" || usage
 
+# project name
+# TODO: if bare repo just remove .git suffix?
+name=$(basename "$(pwd)")
+
+# read .git/description.
+description=""
+test -f ".git/description" && description="$(cat '.git/description')"
+
 # TODO: make configurable.
 baseurl="http://cow.codemadness.org/gitlog/"
-# TODO: read .git/description.
-description="sbase"
 
-# absolute path to logdir.
-logdir="$(readlink -f $2)"
-mkdir -p "${logdir}"
+indexpage="log.html"
+
 firstcommit=$(git log | grep '^commit ' | tail -n 1 | cut -f 2 -d ' ')
 
 # make log per file.
 # TODO: just link to commit/commit? save some space and time?
 git ls-tree -r --name-only master | while read -r file; do
-	test -e "${logdir}/file/${file}.html" && continue
+	test -e "${htmldir}/file/${file}.html" && continue
 
 	d=$(dirname "${file}")
-	mkdir -p "${logdir}/file/${d}"
+	mkdir -p "${htmldir}/file/${d}"
 
-	header > "${logdir}/file/${file}.html"
+	header > "${htmldir}/file/${file}.html"
 	git show "${firstcommit}"...master "${file}" | \
-		sed -E 's@^commit (.*)$@commit <a href="commit/\1.html">\1</a>@g' >> "${logdir}/file/${file}.html"
-	footer >> "${logdir}/file/${file}.html"
+		sed -E 's@^commit (.*)$@commit <a href="commit/\1.html">\1</a>@g' >> "${htmldir}/file/${file}.html"
+	footer >> "${htmldir}/file/${file}.html"
 done
 
 # make log with all commits.
-header > "${logdir}/log.html"
-printf '<table border="0">' >> "${logdir}/log.html"
-git log --pretty='<tr><td align="right">%cD</td><td><a href="commit/%H.html">%H</a></td><td>%an</td><td>%s</td></tr>' >> "${logdir}/log.html"
-printf '</table>' >> "${logdir}/log.html"
-footer >> "${logdir}/log.html"
+header > "${htmldir}/log.html"
+printf '<table border="0">' >> "${htmldir}/log.html"
+git log --pretty='<tr><td align="right">%cD</td><td><a href="commit/%H.html">%H</a></td><td>%an</td><td>%s</td></tr>' >> "${htmldir}/log.html"
+printf '</table>' >> "${htmldir}/log.html"
+footer >> "${htmldir}/log.html"
 
 # make diff for each commit (all files).
-mkdir -p "${logdir}/commit"
+mkdir -p "${htmldir}/commit"
 git log --pretty='%H' | while read -r commit; do
-	test -e "${logdir}/commit/${commit}.html" && continue
-	header > "${logdir}/commit/${commit}.html"
-	git show "${commit}" >> "${logdir}/commit/${commit}.html"
-	footer >> "${logdir}/commit/${commit}.html"
+	test -e "${htmldir}/commit/${commit}.html" && continue
+	header > "${htmldir}/commit/${commit}.html"
+	git show "${commit}" >> "${htmldir}/commit/${commit}.html"
+	footer >> "${htmldir}/commit/${commit}.html"
 done 
 
 # make index with file links.
-header >> "${logdir}/index.html"
-git ls-tree -r master | sed -E 's@	(.*)$@	<a href="file/\1.html">\1</a>@g' >> "${logdir}/index.html"
-footer >> "${logdir}/index.html"
+header >> "${htmldir}/files.html"
+git ls-tree -r master | sed -E 's@	(.*)$@	<a href="file/\1.html">\1</a>@g' >> "${htmldir}/files.html"
+footer >> "${htmldir}/files.html"
 
 # readme page
 # find README file.
@@ -102,13 +113,13 @@ for f in README README.md readme.md; do
 	test -e "${f}" && readme="${f}"
 done
 # make page.
-header > "${logdir}/readme.html"
+header > "${htmldir}/readme.html"
 if test x"${readme}" != x""; then
-	cat "${readme}" >> "${logdir}/readme.html"
+	cat "${readme}" >> "${htmldir}/readme.html"
 else
-	echo "no README file found" >> "${logdir}/readme.html"
+	echo "no README file found" >> "${htmldir}/readme.html"
 fi
-footer >> "${logdir}/readme.html"
+footer >> "${htmldir}/readme.html"
 
 # license page
 # find LICENSE file.
@@ -117,15 +128,18 @@ for f in LICENSE LICENSE.md; do
 	test -e "${f}" && license="${f}"
 done
 # make page.
-header > "${logdir}/license.html"
+header > "${htmldir}/license.html"
 if test x"${readme}" != x""; then
-	cat "${license}" >> "${logdir}/license.html"
+	cat "${license}" >> "${htmldir}/license.html"
 else
-	echo "unknown license" >> "${logdir}/license.html"
+	echo "unknown license" >> "${htmldir}/license.html"
 fi
-footer >> "${logdir}/license.html"
+footer >> "${htmldir}/license.html"
 
 # stats (authors).
-header > "${logdir}/stats.html"
-git shortlog -n -s >> "${logdir}/stats.html"
-footer >> "${logdir}/stats.html"
+header > "${htmldir}/stats.html"
+git shortlog -n -s >> "${htmldir}/stats.html"
+footer >> "${htmldir}/stats.html"
+
+# symlink to index page.
+ln -sf "$indexpage" "${htmldir}/index.html"

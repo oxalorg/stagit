@@ -6,11 +6,12 @@
 - escape < > ' " etc, maybe even use CDATA ?
 - shorter date format for logs.html page.
 - speed up generating files.
-x add stylesheet + 2f30/suckless logo.
 - for files link to the commit but make the filename a link anchor.
-- default to log view (stateless).
 - link to lines in file view! / commit log?
 - show all the tags and branches as list.
 - show commits for all tags and branches???
-x no tarballs, snapshots and such.
 - able to add link to git url: git://url... per project.
+
+x default to log view (stateless).
+x no tarballs, snapshots and such.
+x add stylesheet + 2f30/suckless logo.
