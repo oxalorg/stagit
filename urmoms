@@ -1,0 +1,117 @@
+#!/bin/sh
+
+# DEBUG
+#set -e -x
+
+baseurl="http://cow.codemadness.org/gitlog/"
+# TODO: read .git/description.
+description="sbase"
+logdir="../gitlog"
+
+header() {
+	cat <<!__EOF__
+<!DOCTYPE HTML>
+<html dir="ltr" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta http-equiv="Content-Language" content="en" />
+<title>${description}</title>
+<base href="${baseurl}" />
+<link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+<center>
+<h1><img src="logo.png" alt="" /> ${description}</h1>
+<a href="index.html">Tree</a> |
+<a href="log.html">Log</a> |
+<a href="stats.html">Stats</a> |
+<a href="readme.html">README</a> |
+<a href="license.html">LICENSE</a>
+</center>
+<hr/>
+<pre>
+!__EOF__
+}
+
+footer() {
+	cat <<!__EOF__
+</pre>
+<hr/>
+<i><center>Powered by urmoms vibrator</center></i>
+</body>
+</html>
+!__EOF__
+}
+
+mkdir -p "${logdir}"
+firstcommit=$(git log | grep '^commit ' | tail -n 1 | cut -f 2 -d ' ')
+
+# make log per file.
+# TODO: just link to commit/commit? save some space and time?
+git ls-tree -r --name-only master | while read -r file; do
+	test -e "${logdir}/file/${file}.html" && continue
+
+	d=$(dirname "${file}")
+	mkdir -p "${logdir}/file/${d}"
+
+	header > "${logdir}/file/${file}.html"
+	git show "${firstcommit}"...master "${file}" | \
+		sed -E 's@^commit (.*)$@commit <a href="commit/\1.html">\1</a>@g' >> "${logdir}/file/${file}.html"
+	footer >> "${logdir}/file/${file}.html"
+done
+
+# make log with all commits.
+header > "${logdir}/log.html"
+printf '<table border="0">' >> "${logdir}/log.html"
+git log --pretty='<tr><td align="right">%cD</td><td><a href="commit/%H.html">%H</a></td><td>%an</td><td>%s</td></tr>' >> "${logdir}/log.html"
+printf '</table>' >> "${logdir}/log.html"
+footer >> "${logdir}/log.html"
+
+# make diff for each commit (all files).
+mkdir -p "${logdir}/commit"
+git log --pretty='%H' | while read -r commit; do
+	test -e "${logdir}/commit/${commit}.html" && continue
+	header > "${logdir}/commit/${commit}.html"
+	git show "${commit}" >> "${logdir}/commit/${commit}.html"
+	footer >> "${logdir}/commit/${commit}.html"
+done 
+
+# make index with file links.
+header >> "${logdir}/index.html"
+git ls-tree -r master | sed -E 's@	(.*)$@	<a href="file/\1.html">\1</a>@g' >> "${logdir}/index.html"
+footer >> "${logdir}/index.html"
+
+# readme page
+# find README file.
+readme=""
+for f in README README.md readme.md; do
+	test -e "${f}" && readme="${f}"
+done
+# make page.
+header > "${logdir}/readme.html"
+if test x"${readme}" != x""; then
+	cat "${readme}" >> "${logdir}/readme.html"
+else
+	echo "no README file found" >> "${logdir}/readme.html"
+fi
+footer >> "${logdir}/readme.html"
+
+# license page
+# find LICENSE file.
+license=""
+for f in LICENSE LICENSE.md; do
+	test -e "${f}" && license="${f}"
+done
+# make page.
+header > "${logdir}/license.html"
+if test x"${readme}" != x""; then
+	cat "${license}" >> "${logdir}/license.html"
+else
+	echo "unknown license" >> "${logdir}/license.html"
+fi
+footer >> "${logdir}/license.html"
+
+# stats (authors).
+header > "${logdir}/stats.html"
+git shortlog -n -s >> "${logdir}/stats.html"
+footer >> "${logdir}/stats.html"

@@ -1,0 +1,23 @@
+body {
+	font-family: sans-serif;
+	color: #00ff00;
+	background-color: #000;
+}
+
+h1 {
+	vertical-align: middle;
+}
+
+a {
+	color: #00ff00;
+}
+
+hr {
+	color: #00ff00;
+	background-color: #00ff00;
+	border-top: 1px solid #00ff00;
+}
+
+pre {
+	font-family: monospace;
+}
