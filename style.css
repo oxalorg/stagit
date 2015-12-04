@@ -1,21 +1,21 @@
 body {
 	font-family: sans-serif;
-	color: #00ff00;
-	background-color: #000;
+	color: #333;
+	background-color: #fff;
 }
 
-h1 {
+h1, h2 {
 	vertical-align: middle;
 }
 
-a {
-	color: #00ff00;
+h1 {
+	font-size: 140%;
 }
 
 hr {
-	color: #00ff00;
-	background-color: #00ff00;
-	border-top: 1px solid #00ff00;
+	color: #777;
+	background-color: #777;
+	border-top: 1px solid #777;
 }
 
 pre {
