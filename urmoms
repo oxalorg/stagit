@@ -3,10 +3,10 @@
 # DEBUG
 #set -e -x
 
-baseurl="http://cow.codemadness.org/gitlog/"
-# TODO: read .git/description.
-description="sbase"
-logdir="../gitlog"
+usage() {
+	printf '%s <repodir> <htmldir>\n' "$0"
+	exit 1
+}
 
 header() {
 	cat <<!__EOF__
@@ -43,6 +43,20 @@ footer() {
 !__EOF__
 }
 
+if test x"$1" = x"" || test x"$2" = x""; then
+	usage
+fi
+
+# repodir must be a directory to go to.
+cd "$1" || usage
+
+# TODO: make configurable.
+baseurl="http://cow.codemadness.org/gitlog/"
+# TODO: read .git/description.
+description="sbase"
+
+# absolute path to logdir.
+logdir="$(readlink -f $2)"
 mkdir -p "${logdir}"
 firstcommit=$(git log | grep '^commit ' | tail -n 1 | cut -f 2 -d ' ')
 

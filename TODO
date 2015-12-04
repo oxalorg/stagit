@@ -1,3 +1,4 @@
+- make baseurl in HTML page (header) configurable.
 - be smarter about changes (an existing commit can never change the diff page).
 - add raw link to latest files: raw/file...
 - add summary page?
@@ -5,11 +6,11 @@
 - escape < > ' " etc, maybe even use CDATA ?
 - shorter date format for logs.html page.
 - speed up generating files.
-- add stylesheet + 2f30/suckless logo.
+x add stylesheet + 2f30/suckless logo.
 - for files link to the commit but make the filename a link anchor.
 - default to log view (stateless).
 - link to lines in file view! / commit log?
 - show all the tags and branches as list.
 - show commits for all tags and branches???
-- no tarballs, snapshots and such.
+x no tarballs, snapshots and such.
 - able to add link to git url: git://url... per project.
