@@ -1,4 +1,5 @@
 #include <err.h>
+#include <libgen.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,12 +9,11 @@
 
 static git_repository *repo;
 
-static const char *relpath = "";
-static const char *name = "";
-static const char *description = "";
-
+static const char *relpath;
 static const char *repodir = ".";
 
+static char name[255];
+static char description[255];
 static int hasreadme, haslicense;
 
 FILE *
@@ -26,6 +26,41 @@ efopen(const char *name, const char *flags)
 		err(1, "fopen");
 
 	return fp;
+}
+
+void
+concat(FILE *fp1, FILE *fp2)
+{
+	char buf[BUFSIZ];
+	size_t n;
+
+	while ((n = fread(buf, 1, sizeof(buf), fp1))) {
+		fwrite(buf, 1, n, fp2);
+
+		if (feof(fp1) || ferror(fp1) || ferror(fp2))
+			break;
+	}
+}
+
+/* Some implementations of basename(3) return a pointer to a static
+ * internal buffer (OpenBSD). Others modify the contents of `path` (POSIX).
+ * This is a wrapper function that is compatible with both versions.
+ * The program will error out if basename(3) failed, this can only happen
+ * with the OpenBSD version. */
+char *
+xbasename(const char *path)
+{
+	char *p, *b;
+
+	if (!(p = strdup(path)))
+		err(1, "strdup");
+	if (!(b = basename(p)))
+		err(1, "basename");
+	if (!(b = strdup(b)))
+		err(1, "strdup");
+	free(p);
+
+	return b;
 }
 
 static void
@@ -98,7 +133,7 @@ writeheader(FILE *fp)
 		"<html dir=\"ltr\" lang=\"en\"><head>"
 		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />"
 		"<meta http-equiv=\"Content-Language\" content=\"en\" />");
-	fprintf(fp, "<title>%s - %s</title>", name, description);
+	fprintf(fp, "<title>%s%s%s</title>", name, description[0] ? " - " : "", description);
 	fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />"
 		"</head><body><center>");
 	fprintf(fp, "<h1><img src=\"%slogo.png\" alt=\"\" /> %s</h1>", relpath, name);
@@ -187,26 +222,12 @@ writebranches(FILE *fp)
 }
 #endif
 
-void
-concat(FILE *fp1, FILE *fp2)
-{
-	char buf[BUFSIZ];
-	size_t n;
-
-	while ((n = fread(buf, 1, sizeof(buf), fp1))) {
-		fwrite(buf, 1, n, fp2);
-
-		if (feof(fp1) || ferror(fp1) || ferror(fp2))
-			break;
-	}
-}
-
 int
 main(int argc, char *argv[])
 {
 	const git_error *e = NULL;
 	FILE *fp, *fpread;
-	char path[PATH_MAX];
+	char path[PATH_MAX], *p;
 	int status;
 
 	if (argc != 2) {
@@ -223,6 +244,26 @@ main(int argc, char *argv[])
 		exit(status);
 	}
 
+	/* use directory name as name */
+	p = xbasename(repodir);
+	snprintf(name, sizeof(name), "%s", p);
+	free(p);
+
+	/* read description or .git/description */
+	snprintf(path, sizeof(path), "%s%s%s",
+		repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "description");
+	if (!(fpread = fopen(path, "r+b"))) {
+		snprintf(path, sizeof(path), "%s%s%s",
+			repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/description");
+		fpread = fopen(path, "r+b");
+	}
+	if (fpread) {
+		if (!fgets(description, sizeof(description), fpread))
+			description[0] = '\0';
+		fclose(fpread);
+	}
+
+	/* read LICENSE */
 	snprintf(path, sizeof(path), "%s%s%s",
 		repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "LICENSE");
 	if ((fpread = fopen(path, "r+b"))) {
@@ -239,6 +280,7 @@ main(int argc, char *argv[])
 		haslicense = 1;
 	}
 
+	/* read README */
 	snprintf(path, sizeof(path), "%s%s%s",
 		repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "README");
 	if ((fpread = fopen(path, "r+b"))) {
