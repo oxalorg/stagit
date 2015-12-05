@@ -1,8 +1,12 @@
 #include <err.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "git2.h"
+
+static git_repository *repo;
 
 static const char *relpath = "";
 static const char *name = "";
@@ -10,7 +14,7 @@ static const char *description = "";
 
 static const char *repodir = ".";
 
-static git_repository *repo;
+static int hasreadme, haslicense;
 
 FILE *
 efopen(const char *name, const char *flags)
@@ -102,8 +106,10 @@ writeheader(FILE *fp)
 	fprintf(fp, "<a href=\"%slog.html\">Log</a> |", relpath);
 	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>| ", relpath);
 	fprintf(fp, "<a href=\"%sstats.html\">Stats</a> | ", relpath);
-	fprintf(fp, "<a href=\"%sreadme.html\">README</a> | ", relpath);
-	fprintf(fp, "<a href=\"%slicense.html\">LICENSE</a>", relpath);
+	if (hasreadme)
+		fprintf(fp, "<a href=\"%sreadme.html\">README</a> | ", relpath);
+	if (haslicense)
+		fprintf(fp, "<a href=\"%slicense.html\">LICENSE</a>", relpath);
 	fprintf(fp, "</center><hr/><pre>");
 
 	return 0;
@@ -181,12 +187,27 @@ writebranches(FILE *fp)
 }
 #endif
 
+void
+concat(FILE *fp1, FILE *fp2)
+{
+	char buf[BUFSIZ];
+	size_t n;
+
+	while ((n = fread(buf, 1, sizeof(buf), fp1))) {
+		fwrite(buf, 1, n, fp2);
+
+		if (feof(fp1) || ferror(fp1) || ferror(fp2))
+			break;
+	}
+}
+
 int
 main(int argc, char *argv[])
 {
-	int status;
 	const git_error *e = NULL;
-	FILE *fp;
+	FILE *fp, *fpread;
+	char path[PATH_MAX];
+	int status;
 
 	if (argc != 2) {
 		fprintf(stderr, "%s <repodir>\n", argv[0]);
@@ -200,6 +221,37 @@ main(int argc, char *argv[])
 		e = giterr_last();
 		fprintf(stderr, "error %d/%d: %s\n", status, e->klass, e->message);
 		exit(status);
+	}
+
+	snprintf(path, sizeof(path), "%s%s%s",
+		repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "LICENSE");
+	if ((fpread = fopen(path, "r+b"))) {
+		fp = efopen("license.html", "w+b");
+		writeheader(fp);
+		concat(fpread, fp);
+		if (ferror(fpread) || ferror(fp))
+			err(1, "concat");
+		writefooter(fp);
+
+		fclose(fp);
+		fclose(fpread);
+
+		haslicense = 1;
+	}
+
+	snprintf(path, sizeof(path), "%s%s%s",
+		repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "README");
+	if ((fpread = fopen(path, "r+b"))) {
+		fp = efopen("readme.html", "w+b");
+		writeheader(fp);
+		concat(fpread, fp);
+		if (ferror(fpread) || ferror(fp))
+			err(1, "concat");
+		writefooter(fp);
+		fclose(fp);
+		fclose(fpread);
+
+		hasreadme = 1;
 	}
 
 	fp = efopen("logs.html", "w+b");

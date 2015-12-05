@@ -3,7 +3,7 @@
 - add raw link to latest files: raw/file...
 - add summary page?
 - add diffstat to diff page? + and - lines summary?
-- escape < > ' " etc, maybe even use CDATA ?
+- escape HTML: < > ' " etc, maybe even use CDATA ?
 - shorter date format for logs.html page.
 - speed up generating files.
 - for files link to the commit but make the filename a link anchor.
