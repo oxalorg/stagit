@@ -140,11 +140,11 @@ writeheader(FILE *fp)
 	fprintf(fp, "<span class=\"desc\">%s</span><br/>", description);
 	fprintf(fp, "<a href=\"%slog.html\">Log</a> |", relpath);
 	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>| ", relpath);
-	fprintf(fp, "<a href=\"%sstats.html\">Stats</a> | ", relpath);
+	fprintf(fp, "<a href=\"%sstats.html\">Stats</a>", relpath);
 	if (hasreadme)
-		fprintf(fp, "<a href=\"%sreadme.html\">README</a> | ", relpath);
+		fprintf(fp, " | <a href=\"%sreadme.html\">README</a>", relpath);
 	if (haslicense)
-		fprintf(fp, "<a href=\"%slicense.html\">LICENSE</a>", relpath);
+		fprintf(fp, " | <a href=\"%slicense.html\">LICENSE</a>", relpath);
 	fprintf(fp, "</center><hr/><pre>");
 
 	return 0;
