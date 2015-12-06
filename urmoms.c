@@ -28,17 +28,21 @@ efopen(const char *name, const char *flags)
 	return fp;
 }
 
+/* Escape characters below as HTML 2.0 / XML 1.0. */
 void
-concat(FILE *fp1, FILE *fp2)
+xmlencode(FILE *fp, const char *s, size_t len)
 {
-	char buf[BUFSIZ];
-	size_t n;
+	size_t i;
 
-	while ((n = fread(buf, 1, sizeof(buf), fp1))) {
-		fwrite(buf, 1, n, fp2);
-
-		if (feof(fp1) || ferror(fp1) || ferror(fp2))
-			break;
+	for (i = 0; *s && i < len; s++, i++) {
+		switch(*s) {
+		case '<':  fputs("&lt;",   fp); break;
+		case '>':  fputs("&gt;",   fp); break;
+		case '\'': fputs("&apos;", fp); break;
+		case '&':  fputs("&amp;",  fp); break;
+		case '"':  fputs("&quot;", fp); break;
+		default:   fputc(*s, fp);
+		}
 	}
 }
 
@@ -64,7 +68,7 @@ xbasename(const char *path)
 }
 
 static void
-printtime(FILE *fp, const git_time * intime, const char *prefix)
+printtime(FILE *fp, const git_time *intime, const char *prefix)
 {
 	struct tm *intm;
 	time_t t;
@@ -91,7 +95,43 @@ printtime(FILE *fp, const git_time * intime, const char *prefix)
 }
 
 static void
-printcommit(FILE *fp, git_commit * commit)
+printcommit(FILE *fp, git_commit *commit)
+{
+	const git_signature *sig;
+	char buf[GIT_OID_HEXSZ + 1];
+	int i, count;
+	const char *scan, *eol;
+
+	git_oid_tostr(buf, sizeof(buf), git_commit_id(commit));
+	fprintf(fp, "commit <a href=\"commit/%s.html\">%s</a>\n", buf, buf);
+
+	if ((count = (int)git_commit_parentcount(commit)) > 1) {
+		fprintf(fp, "Merge:");
+		for (i = 0; i < count; ++i) {
+			git_oid_tostr(buf, 8, git_commit_parent_id(commit, i));
+			fprintf(fp, " %s", buf);
+		}
+		fprintf(fp, "\n");
+	}
+	if ((sig = git_commit_author(commit)) != NULL) {
+		fprintf(fp, "Author: <a href=\"author/%s.html\">%s</a> <%s>\n",
+			sig->name, sig->name, sig->email);
+		printtime(fp, &sig->when, "Date:   ");
+	}
+	fprintf(fp, "\n");
+
+	for (scan = git_commit_message(commit); scan && *scan;) {
+		for (eol = scan; *eol && *eol != '\n'; ++eol)	/* find eol */
+			;
+
+		fprintf(fp, "    %.*s\n", (int) (eol - scan), scan);
+		scan = *eol ? eol + 1 : NULL;
+	}
+	fprintf(fp, "\n");
+}
+
+static void
+printcommitdiff(FILE *fp, git_commit *commit)
 {
 	const git_signature *sig;
 	char buf[GIT_OID_HEXSZ + 1];
@@ -222,9 +262,16 @@ writebranches(FILE *fp)
 }
 #endif
 
+void
+writeblobhtml(FILE *fp, const git_blob *blob)
+{
+	xmlencode(fp, git_blob_rawcontent(blob), (size_t)git_blob_rawsize(blob));
+}
+
 int
 main(int argc, char *argv[])
 {
+	git_object *obj = NULL;
 	const git_error *e = NULL;
 	FILE *fp, *fpread;
 	char path[PATH_MAX], *p;
@@ -241,7 +288,7 @@ main(int argc, char *argv[])
 	if ((status = git_repository_open(&repo, repodir)) < 0) {
 		e = giterr_last();
 		fprintf(stderr, "error %d/%d: %s\n", status, e->klass, e->message);
-		exit(status);
+		return status;
 	}
 
 	/* use directory name as name */
@@ -264,34 +311,28 @@ main(int argc, char *argv[])
 	}
 
 	/* read LICENSE */
-	snprintf(path, sizeof(path), "%s%s%s",
-		repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "LICENSE");
-	if ((fpread = fopen(path, "r+b"))) {
+	if (!git_revparse_single(&obj, repo, "HEAD:LICENSE")) {
 		fp = efopen("license.html", "w+b");
 		writeheader(fp);
-		concat(fpread, fp);
-		if (ferror(fpread) || ferror(fp))
-			err(1, "concat");
+		writeblobhtml(fp, (git_blob *)obj);
+		if (ferror(fp))
+			err(1, "fwrite");
 		writefooter(fp);
 
 		fclose(fp);
-		fclose(fpread);
 
 		haslicense = 1;
 	}
 
 	/* read README */
-	snprintf(path, sizeof(path), "%s%s%s",
-		repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "README");
-	if ((fpread = fopen(path, "r+b"))) {
+	if (!git_revparse_single(&obj, repo, "HEAD:README")) {
 		fp = efopen("readme.html", "w+b");
 		writeheader(fp);
-		concat(fpread, fp);
-		if (ferror(fpread) || ferror(fp))
-			err(1, "concat");
+		writeblobhtml(fp, (git_blob *)obj);
+		if (ferror(fp))
+			err(1, "fwrite");
 		writefooter(fp);
 		fclose(fp);
-		fclose(fpread);
 
 		hasreadme = 1;
 	}
