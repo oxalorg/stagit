@@ -257,18 +257,32 @@ printshowfile(git_commit *commit)
 			relpath, delta->old_file.path, delta->old_file.path,
 			relpath, delta->new_file.path, delta->new_file.path);
 
-		/* TODO: add --- and +++ lines */
+		/* TODO: "new file mode <mode>". */
+		/* TODO: add indexfrom...indexto + flags */
 
 #if 0
-		switch (delta->flags) {
-		case GIT_DIFF_FLAG_BINARY:
-			/* "Binary files /dev/null and b/favicon.png differ" or so */
-			continue; /* TODO: binary data */
-		case GIT_DIFF_FLAG_NOT_BINARY:   break;
-		case GIT_DIFF_FLAG_VALID_ID:     break; /* TODO: check */
-		case GIT_DIFF_FLAG_EXISTS:       break; /* TODO: check */
-		}
+		fputs("<b>--- ", fp);
+		if (delta->status & GIT_DELTA_ADDED)
+			fputs("/dev/null", fp);
+		else
+			fprintf(fp, "a/<a href=\"%sfile/%s\">%s</a>",
+				relpath, delta->old_file.path, delta->old_file.path);
+
+		fputs("\n+++ ", fp);
+		if (delta->status & GIT_DELTA_DELETED)
+			fputs("/dev/null", fp);
+		else
+			fprintf(fp, "b/<a href=\"%sfile/%s\">%s</a>",
+				relpath, delta->new_file.path, delta->new_file.path);
+		fputs("</b>\n", fp);
 #endif
+
+		/* check binary data */
+		if (delta->flags & GIT_DIFF_FLAG_BINARY) {
+			fputs("Binary files differ\n", fp);
+			git_patch_free(patch);
+			continue;
+		}
 
 		nhunks = git_patch_num_hunks(patch);
 		for (j = 0; j < nhunks; j++) {
@@ -333,8 +347,8 @@ writelog(FILE *fp)
 	      "<td align=\"right\">Files</td><td align=\"right\">+</td><td align=\"right\">-</td></tr>\n</thead><tbody>\n", fp);
 	while (!git_revwalk_next(&id, w)) {
 		/* DEBUG */
-		if (i++ > 100)
-			break;
+/*		if (i++ > 100)
+			break;*/
 
 		relpath = "";
 
