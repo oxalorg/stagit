@@ -259,7 +259,7 @@ printshowfile(git_commit *commit)
 		}
 
 		delta = git_patch_get_delta(patch);
-		fprintf(fp, "diff --git a/<a href=\"%s%s\">%s</a> b/<a href=\"%s%s\">%s</a>\n",
+		fprintf(fp, "diff --git a/<a href=\"%sfile/%s\">%s</a> b/<a href=\"%sfile/%s\">%s</a>\n",
 			relpath, delta->old_file.path, delta->old_file.path,
 			relpath, delta->new_file.path, delta->new_file.path);
 
@@ -285,12 +285,16 @@ printshowfile(git_commit *commit)
 				if (git_patch_get_line_in_hunk(&line, patch, j, k))
 					break;
 				if (line->old_lineno == -1)
-					fputc('+', fp);
+					fprintf(fp, "<span class=\"i\"><a href=\"#h%zu-%zu\" id=\"h%zu-%zu\">+",
+						j, k, j, k);
 				else if (line->new_lineno == -1)
-					fputc('-', fp);
+					fprintf(fp, "<span class=\"d\"><a href=\"#h%zu-%zu\" id=\"h%zu-%zu\">-",
+						j, k, j, k);
 				else
 					fputc(' ', fp);
 				xmlencode(fp, line->content, line->content_len);
+				if (line->old_lineno == -1 || line->new_lineno == -1)
+					fputs("</a></span>", fp);
 			}
 		}
 		git_patch_free(patch);
