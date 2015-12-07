@@ -1,3 +1,6 @@
+- time format: YYYY-MM-DD HH:MM    (UTC+00:00, but dont show timezone).
+- max line length in log should be 72 bytes.
+
 - use UTC+0000 timestamps, dont use server time.
 
 - make lines in diffs a link.
