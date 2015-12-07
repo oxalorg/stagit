@@ -32,7 +32,7 @@ writeheader(FILE *fp)
 		name, relpath);
 	fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"%sstyle.css\" />\n", relpath);
 	fputs("</head>\n<body>\n<center>\n", fp);
-	fprintf(fp, "<h1><img src=\"%slogo.png\" alt=\"\" /> %s <span class=\"desc\">%s</span></h1>\n",
+	fprintf(fp, "<h1><img src=\"%slogo.png\" alt=\"\" width=\"32\" height=\"32\" /> %s <span class=\"desc\">%s</span></h1>\n",
 		relpath, name, description);
 	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
 	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>", relpath);
