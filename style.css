@@ -4,20 +4,59 @@ body {
 	background-color: #fff;
 }
 
-h1, h2 {
+h1, h2, h3, h4, h5, h6 {
+	margin: 0;
+}
+
+img, h1, h2 {
 	vertical-align: middle;
+}
+
+table thead td {
+	font-weight: bold;
+}
+
+table td {
+	padding: 0 3px;
+}
+
+table tr:hover td {
+	background-color: #ddd;
 }
 
 h1 {
 	font-size: 140%;
 }
 
+.desc {
+	font-size: 100%;
+	color: #777;
+}
+
+h1 img {
+	height: 32px;
+}
+
 hr {
 	color: #777;
 	background-color: #777;
+	border: 0;
 	border-top: 1px solid #777;
 }
 
 pre {
 	font-family: monospace;
+}
+
+pre span.i {
+	color: green;
+}
+
+pre span.d {
+	color: red;
+}
+
+pre span a {
+	text-decoration: none;
+	color: inherit;
 }
