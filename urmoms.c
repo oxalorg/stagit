@@ -165,15 +165,15 @@ printcommit(FILE *fp, git_commit *commit)
 
 	/* TODO: show tag when commit has it */
 	git_oid_tostr(buf, sizeof(buf), git_commit_id(commit));
-	fprintf(fp, "commit <a href=\"%scommit/%s.html\">%s</a>\n",
+	fprintf(fp, "<b>commit</b> <a href=\"%scommit/%s.html\">%s</a>\n",
 		relpath, buf, buf);
 
 	if (git_oid_tostr(buf, sizeof(buf), git_commit_parent_id(commit, 0)))
-		fprintf(fp, "parent <a href=\"%scommit/%s.html\">%s</a>\n",
+		fprintf(fp, "<b>parent</b> <a href=\"%scommit/%s.html\">%s</a>\n",
 			relpath, buf, buf);
 
 	if ((count = (int)git_commit_parentcount(commit)) > 1) {
-		fprintf(fp, "Merge:");
+		fprintf(fp, "<b>Merge:</b>");
 		for (i = 0; i < count; ++i) {
 			git_oid_tostr(buf, 8, git_commit_parent_id(commit, i));
 			fprintf(fp, " <a href=\"%scommit/%s.html\">%s</a>",
@@ -182,13 +182,13 @@ printcommit(FILE *fp, git_commit *commit)
 		fputc('\n', fp);
 	}
 	if ((sig = git_commit_author(commit)) != NULL) {
-		fprintf(fp, "Author: ");
+		fprintf(fp, "<b>Author:</b> ");
 		xmlencode(fp, sig->name, strlen(sig->name));
 		fprintf(fp, " &lt;<a href=\"mailto:");
 		xmlencode(fp, sig->email, strlen(sig->email));
 		fputs("\">", fp);
 		xmlencode(fp, sig->email, strlen(sig->email));
-		fputs("</a>&gt;\nDate:   ", fp);
+		fputs("</a>&gt;\n<b>Date:</b>   ", fp);
 		printtime(fp, &sig->when);
 		fputc('\n', fp);
 	}
@@ -238,7 +238,7 @@ printshowfile(git_commit *commit)
 	if (!git_diff_get_stats(&diffstats, diff)) {
 		if (!git_diff_stats_to_buf(&diffstatsbuf, diffstats,
 		    GIT_DIFF_STATS_FULL | GIT_DIFF_STATS_SHORT, 80)) {
-			fprintf(fp, "Diffstat:\n");
+			fprintf(fp, "<b>Diffstat:</b>\n");
 			fputs(diffstatsbuf.ptr, fp);
 		}
 		git_diff_stats_free(diffstats);
@@ -253,9 +253,11 @@ printshowfile(git_commit *commit)
 		}
 
 		delta = git_patch_get_delta(patch);
-		fprintf(fp, "diff --git a/<a href=\"%sfile/%s\">%s</a> b/<a href=\"%sfile/%s\">%s</a>\n",
+		fprintf(fp, "<b>diff --git a/<a href=\"%sfile/%s\">%s</a> b/<a href=\"%sfile/%s\">%s</a></b>\n",
 			relpath, delta->old_file.path, delta->old_file.path,
 			relpath, delta->new_file.path, delta->new_file.path);
+
+		/* TODO: add --- and +++ lines */
 
 #if 0
 		switch (delta->flags) {
@@ -273,7 +275,7 @@ printshowfile(git_commit *commit)
 			if (git_patch_get_hunk(&hunk, &nhunklines, patch, j))
 				break; /* TODO: handle error ? */
 
-			fprintf(fp, "%s\n", hunk->header);
+			fprintf(fp, "<span class=\"h\">%s</span>\n", hunk->header);
 
 			for (k = 0; ; k++) {
 				if (git_patch_get_line_in_hunk(&line, patch, j, k))

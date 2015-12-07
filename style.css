@@ -48,6 +48,10 @@ pre {
 	font-family: monospace;
 }
 
+pre span.h {
+	color: blue;
+}
+
 pre span.i {
 	color: green;
 }
