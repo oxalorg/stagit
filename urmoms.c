@@ -152,7 +152,7 @@ printtime(FILE *fp, const git_time *intime)
 	intm = gmtime(&t);
 	strftime(out, sizeof(out), "%a %b %e %T %Y", intm);
 
-	fprintf(fp, "%s %c%02d%02d\n", out, sign, hours, minutes);
+	fprintf(fp, "%s %c%02d%02d", out, sign, hours, minutes);
 }
 
 void
@@ -399,24 +399,24 @@ printcommitatom(FILE *fp, git_commit *commit)
 	int i, count;
 	const char *scan, *eol, *summary;
 
-	fputs("<entry>", fp);
+	fputs("<entry>\n", fp);
 
 	/* TODO: show tag when commit has it */
 	git_oid_tostr(buf, sizeof(buf), git_commit_id(commit));
-	fprintf(fp, "<id>%s</id>", buf);
+	fprintf(fp, "<id>%s</id>\n", buf);
 
 	sig = git_commit_author(commit);
 
 	if (sig) {
 		fputs("<updated>", fp);
 		printtimez(fp, &sig->when);
-		fputs("</updated>", fp);
+		fputs("</updated>\n", fp);
 	}
 
 	if ((summary = git_commit_summary(commit))) {
-		fputs("<title>", fp);
+		fputs("<title type=\"text\">", fp);
 		xmlencode(fp, summary, strlen(summary));
-		fputs("</title>", fp);
+		fputs("</title>\n", fp);
 	}
 
 	fputs("<content type=\"text\">", fp);
@@ -451,15 +451,15 @@ printcommitatom(FILE *fp, git_commit *commit)
 		scan = *eol ? eol + 1 : NULL;
 	}
 	fputc('\n', fp);
-	fputs("</content>", fp);
+	fputs("</content>\n", fp);
 	if (sig) {
 		fputs("<author><name>", fp);
 		xmlencode(fp, sig->name, strlen(sig->name));
-		fputs("</name><email>", fp);
+		fputs("</name>\n<email>", fp);
 		xmlencode(fp, sig->email, strlen(sig->email));
-		fputs("</email></author>", fp);
+		fputs("</email>\n</author>\n", fp);
 	}
-	fputs("</entry>", fp);
+	fputs("</entry>\n", fp);
 }
 
 int
@@ -470,12 +470,13 @@ writeatom(FILE *fp)
 	git_commit *c = NULL;
 	size_t i, m = 100; /* max */
 
-	fputs("<feed xmlns=\"http://www.w3.org/2005/Atom\"><title>", fp);
+	fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", fp);
+	fputs("<feed xmlns=\"http://www.w3.org/2005/Atom\">\n<title>", fp);
 	xmlencode(fp, name, strlen(name));
-	fputs(", branch master</title><subtitle>", fp);
+	fputs(", branch master</title>\n<subtitle>", fp);
 
 	xmlencode(fp, description, strlen(description));
-	fputs("</subtitle>", fp);
+	fputs("</subtitle>\n", fp);
 
 	git_revwalk_new(&w, repo);
 	git_revwalk_push_head(w);
@@ -603,14 +604,15 @@ main(int argc, char *argv[])
 	writefooter(fp);
 	fclose(fp);
 
-	fp = efopen("atom.xml", "w+b");
-	writeatom(fp);
-	fclose(fp);
-
 	fp = efopen("files.html", "w+b");
 	writeheader(fp);
 	writefiles(fp);
 	writefooter(fp);
+	fclose(fp);
+
+	/* Atom feed */
+	fp = efopen("atom.xml", "w+b");
+	writeatom(fp);
 	fclose(fp);
 
 	/* cleanup */
