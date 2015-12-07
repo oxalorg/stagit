@@ -31,7 +31,7 @@ writeheader(FILE *fp)
 	fprintf(fp, "<link rel=\"alternate\" type=\"application/atom+xml\" title=\"%s Atom Feed\" href=\"%satom.xml\" />\n",
 		name, relpath);
 	fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"%sstyle.css\" />\n", relpath);
-	fputs("</head>\n<body>\n", fp);
+	fputs("</head>\n<body>\n<center>\n", fp);
 	fprintf(fp, "<h1><img src=\"%slogo.png\" alt=\"\" /> %s <span class=\"desc\">%s</span></h1>\n",
 		relpath, name, description);
 	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
@@ -41,7 +41,7 @@ writeheader(FILE *fp)
 		fprintf(fp, " | <a href=\"%sreadme.html\">README</a>", relpath);
 	if (haslicense)
 		fprintf(fp, " | <a href=\"%slicense.html\">LICENSE</a>", relpath);
-	fputs("\n<hr/>\n<pre>", fp);
+	fputs("\n</center>\n<hr/>\n<pre>", fp);
 
 	return 0;
 }
