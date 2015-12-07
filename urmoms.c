@@ -37,7 +37,6 @@ writeheader(FILE *fp)
 		relpath, name, description);
 	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
 	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>", relpath);
-	/*fprintf(fp, "| <a href=\"%sstats.html\">Stats</a>", relpath);*/
 	if (hasreadme)
 		fprintf(fp, " | <a href=\"%sreadme.html\">README</a>", relpath);
 	if (haslicense)
@@ -212,12 +211,14 @@ printshowfile(git_commit *commit)
 	git_diff *diff = NULL;
 	git_diff_stats *diffstats = NULL;
 	git_buf diffstatsbuf;
+	FILE *fp;
 	size_t i, j, k, ndeltas, nhunks = 0, nhunklines = 0;
 	char buf[GIT_OID_HEXSZ + 1], path[PATH_MAX];
-	FILE *fp;
 	int error;
 
 	git_oid_tostr(buf, sizeof(buf), git_commit_id(commit));
+	if (!buf[0])
+		return;
 	snprintf(path, sizeof(path), "commit/%s.html", buf);
 	/* check if file exists if so skip it */
 	if (!access(path, F_OK))
@@ -334,11 +335,11 @@ writelog(FILE *fp)
 	git_oid id;
 	git_commit *commit = NULL;
 	const git_signature *author;
-	git_diff_stats *stats;
+	git_diff_stats *stats = NULL;
 	git_tree *commit_tree = NULL, *parent_tree = NULL;
 	git_commit *parent = NULL;
 	git_diff *diff = NULL;
-	size_t i, nfiles, ndel, nadd;
+	size_t nfiles, ndel, nadd;
 	const char *summary;
 	char buf[GIT_OID_HEXSZ + 1];
 	int error, ret = 0;
@@ -349,14 +350,9 @@ writelog(FILE *fp)
 	git_revwalk_push_head(w);
 
 	/* TODO: also make "expanded" log ? (with message body) */
-	i = 0; /* DEBUG: to limit commits */
 	fputs("<table><thead>\n<tr><td>Commit message</td><td>Author</td><td align=\"right\">Age</td>"
 	      "<td align=\"right\">Files</td><td align=\"right\">+</td><td align=\"right\">-</td></tr>\n</thead><tbody>\n", fp);
 	while (!git_revwalk_next(&id, w)) {
-		/* DEBUG */
-/*		if (i++ > 100)
-			break;*/
-
 		relpath = "";
 
 		if (git_commit_lookup(&commit, repo, &id)) {
@@ -367,16 +363,16 @@ writelog(FILE *fp)
 			goto errdiff; /* TODO: handle error */
 		if (!(error = git_commit_parent(&parent, commit, 0))) {
 			if ((error = git_commit_tree(&parent_tree, parent)))
-				goto errdiff; /* TODO: handle error */
+				goto errdiff;
 		} else {
 			parent = NULL;
 			parent_tree = NULL;
 		}
 
 		if ((error = git_diff_tree_to_tree(&diff, repo, parent_tree, commit_tree, NULL)))
-			continue; /* TODO: handle error */
+			goto errdiff;
 		if (git_diff_get_stats(&stats, diff))
-			continue; /* TODO: handle error */
+			goto errdiff;
 
 		git_oid_tostr(buf, sizeof(buf), git_commit_id(commit));
 
@@ -413,6 +409,8 @@ writelog(FILE *fp)
 		printshowfile(commit);
 
 errdiff:
+		/* TODO: print error ? */
+		git_diff_stats_free(stats);
 		git_diff_free(diff);
 		git_commit_free(commit);
 	}
