@@ -370,15 +370,15 @@ writelog(FILE *fp)
 	git_revwalk_push_head(w);
 
 	/* TODO: also make "expanded" log ? (with message body) */
-	fputs("<table><thead>\n<tr><td align=\"right\">Age</td><td>Commit message</td><td>Author</td>"
-	      "<td align=\"right\">Files</td><td align=\"right\">+</td><td align=\"right\">-</td></tr>\n</thead><tbody>\n", fp);
+	fputs("<table><thead>\n<tr><td>Age</td><td>Commit message</td><td>Author</td>"
+	      "<td>Files</td><td>+</td><td>-</td></tr>\n</thead><tbody>\n", fp);
 	while (!git_revwalk_next(&id, w)) {
 		relpath = "";
 
 		if (!(ci = commitinfo_getbyoid(&id)))
 			break;
 
-		fputs("<tr><td align=\"right\">", fp);
+		fputs("<tr><td>", fp);
 		if (ci->author)
 			printtimeshort(fp, &(ci->author->when));
 		fputs("</td><td>", fp);
@@ -395,11 +395,11 @@ writelog(FILE *fp)
 		fputs("</td><td>", fp);
 		if (ci->author)
 			xmlencode(fp, ci->author->name, strlen(ci->author->name));
-		fputs("</td><td align=\"right\">", fp);
+		fputs("</td><td>", fp);
 		fprintf(fp, "%zu", ci->filecount);
-		fputs("</td><td align=\"right\">", fp);
+		fputs("</td><td>", fp);
 		fprintf(fp, "+%zu", ci->addcount);
-		fputs("</td><td align=\"right\">", fp);
+		fputs("</td><td>", fp);
 		fprintf(fp, "-%zu", ci->delcount);
 		fputs("</td></tr>\n", fp);
 
@@ -512,7 +512,7 @@ writefiles(FILE *fp)
 	size_t count, i;
 
 	fputs("<table><thead>\n"
-	      "<tr><td>Mode</td><td>Name</td><td align=\"right\">Size</td></tr>\n"
+	      "<tr><td>Mode</td><td>Name</td><td>Size</td></tr>\n"
 	      "</thead><tbody>\n", fp);
 
 	git_repository_index(&index, repo);
@@ -526,7 +526,7 @@ writefiles(FILE *fp)
 		xmlencode(fp, entry->path, strlen(entry->path));
 		fputs("\">", fp);
 		xmlencode(fp, entry->path, strlen(entry->path));
-		fputs("</a></td><td align=\"right\">", fp);
+		fputs("</a></td><td>", fp);
 		fprintf(fp, "%" PRIu64, entry->file_size);
 		fputs("</td></tr>\n", fp);
 	}
