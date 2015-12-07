@@ -23,25 +23,25 @@ int
 writeheader(FILE *fp)
 {
 	fputs("<!DOCTYPE HTML>"
-		"<html dir=\"ltr\" lang=\"en\"><head>"
-		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />"
-		"<meta http-equiv=\"Content-Language\" content=\"en\" />", fp);
-	fprintf(fp, "<title>%s%s%s</title>", name, description[0] ? " - " : "", description);
-	fprintf(fp, "<link rel=\"icon\" type=\"image/png\" href=\"%sfavicon.png\" />", relpath);
-	fprintf(fp, "<link rel=\"alternate\" type=\"application/atom+xml\" title=\"%s Atom Feed\" href=\"%satom.xml\" />",
+		"<html dir=\"ltr\" lang=\"en\">\n<head>\n"
+		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n"
+		"<meta http-equiv=\"Content-Language\" content=\"en\" />\n", fp);
+	fprintf(fp, "<title>%s%s%s</title>\n", name, description[0] ? " - " : "", description);
+	fprintf(fp, "<link rel=\"icon\" type=\"image/png\" href=\"%sfavicon.png\" />\n", relpath);
+	fprintf(fp, "<link rel=\"alternate\" type=\"application/atom+xml\" title=\"%s Atom Feed\" href=\"%satom.xml\" />\n",
 		name, relpath);
-	fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />"
-		"</head><body><center>");
-	fprintf(fp, "<h1><img src=\"%slogo.png\" alt=\"\" /> %s</h1>", relpath, name);
-	fprintf(fp, "<span class=\"desc\">%s</span><br/>", description);
-	fprintf(fp, "<a href=\"%slog.html\">Log</a> |", relpath);
-	fprintf(fp, "<a href=\"%sfiles.html\">Files</a> | ", relpath);
-	fprintf(fp, "<a href=\"%sstats.html\">Stats</a>", relpath);
+	fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"%sstyle.css\" />\n", relpath);
+	fputs("</head>\n<body>\n", fp);
+	fprintf(fp, "<h1><img src=\"%slogo.png\" alt=\"\" /> %s <span class=\"desc\">%s</span></h1>\n",
+		relpath, name, description);
+	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
+	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>", relpath);
+	/*fprintf(fp, "| <a href=\"%sstats.html\">Stats</a>", relpath);*/
 	if (hasreadme)
 		fprintf(fp, " | <a href=\"%sreadme.html\">README</a>", relpath);
 	if (haslicense)
 		fprintf(fp, " | <a href=\"%slicense.html\">LICENSE</a>", relpath);
-	fputs("</center><hr/><pre>", fp);
+	fputs("\n<hr/>\n<pre>", fp);
 
 	return 0;
 }
@@ -49,7 +49,7 @@ writeheader(FILE *fp)
 int
 writefooter(FILE *fp)
 {
-	return !fputs("</pre></body></html>", fp);
+	return !fputs("</pre>\n</body>\n</html>", fp);
 }
 
 FILE *
