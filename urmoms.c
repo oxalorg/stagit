@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "git2.h"
 
@@ -218,10 +219,13 @@ printshowfile(git_commit *commit)
 
 	git_oid_tostr(buf, sizeof(buf), git_commit_id(commit));
 	snprintf(path, sizeof(path), "commit/%s.html", buf);
-	fp = efopen(path, "w+b");
+	/* check if file exists if so skip it */
+	if (!access(path, F_OK))
+		return;
 
 	memset(&diffstatsbuf, 0, sizeof(diffstatsbuf));
 
+	fp = efopen(path, "w+b");
 	writeheader(fp);
 	printcommit(fp, commit);
 
