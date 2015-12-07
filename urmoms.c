@@ -168,7 +168,7 @@ printcommit(FILE *fp, git_commit *commit)
 	fprintf(fp, "<b>commit</b> <a href=\"%scommit/%s.html\">%s</a>\n",
 		relpath, buf, buf);
 
-	if (git_oid_tostr(buf, sizeof(buf), git_commit_parent_id(commit, 0)))
+	if (git_oid_tostr(buf, sizeof(buf), git_commit_parent_id(commit, 0)) && buf[0])
 		fprintf(fp, "<b>parent</b> <a href=\"%scommit/%s.html\">%s</a>\n",
 			relpath, buf, buf);
 
@@ -225,12 +225,15 @@ printshowfile(git_commit *commit)
 	writeheader(fp);
 	printcommit(fp, commit);
 
-	if ((error = git_commit_parent(&parent, commit, 0)))
-		return;
 	if ((error = git_commit_tree(&commit_tree, commit)))
 		goto err;
-	if ((error = git_commit_tree(&parent_tree, parent)))
-		goto err;
+	if (!(error = git_commit_parent(&parent, commit, 0))) {
+		if ((error = git_commit_tree(&parent_tree, parent)))
+			goto err; /* TODO: handle error */
+	} else {
+		parent = NULL;
+		parent_tree = NULL;
+	}
 	if ((error = git_diff_tree_to_tree(&diff, repo, parent_tree, commit_tree, NULL)))
 		goto err;
 
@@ -334,7 +337,7 @@ writelog(FILE *fp)
 	size_t i, nfiles, ndel, nadd;
 	const char *summary;
 	char buf[GIT_OID_HEXSZ + 1];
-	int error;
+	int error, ret = 0;
 
 	mkdir("commit", 0755);
 
@@ -352,14 +355,20 @@ writelog(FILE *fp)
 
 		relpath = "";
 
-		if (git_commit_lookup(&commit, repo, &id))
-			return 1; /* TODO: error */
-		if ((error = git_commit_parent(&parent, commit, 0)))
-			continue; /* TODO: handle error */
+		if (git_commit_lookup(&commit, repo, &id)) {
+			ret = 1;
+			goto err;
+		}
 		if ((error = git_commit_tree(&commit_tree, commit)))
-			continue; /* TODO: handle error */
-		if ((error = git_commit_tree(&parent_tree, parent)))
-			continue; /* TODO: handle error */
+			goto errdiff; /* TODO: handle error */
+		if (!(error = git_commit_parent(&parent, commit, 0))) {
+			if ((error = git_commit_tree(&parent_tree, parent)))
+				goto errdiff; /* TODO: handle error */
+		} else {
+			parent = NULL;
+			parent_tree = NULL;
+		}
+
 		if ((error = git_diff_tree_to_tree(&diff, repo, parent_tree, commit_tree, NULL)))
 			continue; /* TODO: handle error */
 		if (git_diff_get_stats(&stats, diff))
@@ -399,14 +408,16 @@ writelog(FILE *fp)
 		relpath = "../";
 		printshowfile(commit);
 
+errdiff:
 		git_diff_free(diff);
 		git_commit_free(commit);
 	}
 	fprintf(fp, "</tbody></table>");
+err:
 	git_revwalk_free(w);
 	relpath = "";
 
-	return 0;
+	return ret;
 }
 
 void
@@ -439,7 +450,7 @@ printcommitatom(FILE *fp, git_commit *commit)
 
 	fputs("<content type=\"text\">", fp);
 	fprintf(fp, "commit %s\n", buf);
-	if (git_oid_tostr(buf, sizeof(buf), git_commit_parent_id(commit, 0)))
+	if (git_oid_tostr(buf, sizeof(buf), git_commit_parent_id(commit, 0)) && buf[0])
 		fprintf(fp, "parent %s\n", buf);
 
 	if ((count = (int)git_commit_parentcount(commit)) > 1) {
