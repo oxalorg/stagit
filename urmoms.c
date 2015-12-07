@@ -578,6 +578,13 @@ main(int argc, char *argv[])
 	}
 
 	/* read LICENSE */
+	if (!git_revparse_single(&obj, repo, "HEAD:LICENSE"))
+		haslicense = 1;
+	/* read README */
+	if (!git_revparse_single(&obj, repo, "HEAD:README"))
+		hasreadme = 1;
+
+	/* read LICENSE */
 	if (!git_revparse_single(&obj, repo, "HEAD:LICENSE")) {
 		fp = efopen("license.html", "w+b");
 		writeheader(fp);
@@ -587,8 +594,6 @@ main(int argc, char *argv[])
 		writefooter(fp);
 
 		fclose(fp);
-
-		haslicense = 1;
 	}
 
 	/* read README */
@@ -600,8 +605,6 @@ main(int argc, char *argv[])
 			err(1, "fwrite");
 		writefooter(fp);
 		fclose(fp);
-
-		hasreadme = 1;
 	}
 
 	fp = efopen("log.html", "w+b");
