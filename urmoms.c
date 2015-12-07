@@ -510,7 +510,7 @@ writefiles(FILE *fp)
 	git_repository_index(&index, repo);
 
 	count = git_index_entrycount(index);
-	fputs("<table><thead><tr><td>Mode</td><td>Name</td><td>Size</td></tr></thead><tbody>", fp);
+	fputs("<table><thead>\n<tr><td>Mode</td><td>Name</td><td align=\"right\">Size</td></tr>\n</thead><tbody>\n", fp);
 
 	for (i = 0; i < count; i++) {
 		entry = git_index_get_byindex(index, i);
@@ -522,7 +522,7 @@ writefiles(FILE *fp)
 		xmlencode(fp, entry->path, strlen(entry->path));
 		fputs("</a></td><td align=\"right\">", fp);
 		fprintf(fp, "%" PRIu64, entry->file_size);
-		fputs("</td></tr>", fp);
+		fputs("</td></tr>\n", fp);
 	}
 	fputs("</tbody></table>", fp);
 
