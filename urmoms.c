@@ -161,7 +161,7 @@ printcommit(FILE *fp, git_commit *commit)
 	const git_signature *sig;
 	char buf[GIT_OID_HEXSZ + 1];
 	int i, count;
-	const char *scan, *eol;
+	const char *msg;
 
 	/* TODO: show tag when commit has it */
 	git_oid_tostr(buf, sizeof(buf), git_commit_id(commit));
@@ -194,13 +194,8 @@ printcommit(FILE *fp, git_commit *commit)
 	}
 	fputc('\n', fp);
 
-	for (scan = git_commit_message(commit); scan && *scan;) {
-		for (eol = scan; *eol && *eol != '\n'; ++eol)	/* find eol */
-			;
-
-		fprintf(fp, "    %.*s\n", (int) (eol - scan), scan);
-		scan = *eol ? eol + 1 : NULL;
-	}
+	if ((msg = git_commit_message(commit)))
+		xmlencode(fp, msg, strlen(msg));
 	fputc('\n', fp);
 }
 
@@ -243,7 +238,6 @@ printshowfile(git_commit *commit)
 	if (!git_diff_get_stats(&diffstats, diff)) {
 		if (!git_diff_stats_to_buf(&diffstatsbuf, diffstats,
 		    GIT_DIFF_STATS_FULL | GIT_DIFF_STATS_SHORT, 80)) {
-			fputs("<hr/>", fp);
 			fprintf(fp, "Diffstat:\n");
 			fputs(diffstatsbuf.ptr, fp);
 		}
@@ -405,7 +399,7 @@ printcommitatom(FILE *fp, git_commit *commit)
 	const git_signature *sig;
 	char buf[GIT_OID_HEXSZ + 1];
 	int i, count;
-	const char *scan, *eol, *summary;
+	const char *msg, *summary;
 
 	fputs("<entry>\n", fp);
 
@@ -451,15 +445,9 @@ printcommitatom(FILE *fp, git_commit *commit)
 	}
 	fputc('\n', fp);
 
-	for (scan = git_commit_message(commit); scan && *scan;) {
-		for (eol = scan; *eol && *eol != '\n'; ++eol)	/* find eol */
-			;
-
-		fprintf(fp, "    %.*s\n", (int) (eol - scan), scan);
-		scan = *eol ? eol + 1 : NULL;
-	}
-	fputc('\n', fp);
-	fputs("</content>\n", fp);
+	if ((msg = git_commit_message(commit)))
+		xmlencode(fp, msg, strlen(msg));
+	fputs("\n</content>\n", fp);
 	if (sig) {
 		fputs("<author><name>", fp);
 		xmlencode(fp, sig->name, strlen(sig->name));
