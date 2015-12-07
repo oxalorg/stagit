@@ -39,3 +39,24 @@ hr {
 	border: 0;
 	border-top: 1px solid #777;
 }
+
+pre {
+	font-family: monospace;
+}
+
+pre span.h {
+	color: blue;
+}
+
+pre span.i {
+	color: green;
+}
+
+pre span.d {
+	color: red;
+}
+
+pre span a {
+	text-decoration: none;
+	color: inherit;
+}
