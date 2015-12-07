@@ -1,6 +1,7 @@
 #include <sys/stat.h>
 
 #include <err.h>
+#include <inttypes.h>
 #include <libgen.h>
 #include <limits.h>
 #include <stdio.h>
@@ -58,8 +59,7 @@ efopen(const char *name, const char *flags)
 {
 	FILE *fp;
 
-	fp = fopen(name, flags);
-	if (!fp)
+	if (!(fp = fopen(name, flags)))
 		err(1, "fopen");
 
 	return fp;
@@ -139,6 +139,7 @@ printcommit(FILE *fp, git_commit *commit)
 	int i, count;
 	const char *scan, *eol;
 
+	/* TODO: show tag when commit has it */
 	git_oid_tostr(buf, sizeof(buf), git_commit_id(commit));
 	fprintf(fp, "commit <a href=\"%scommit/%s.html\">%s</a>\n",
 		relpath, buf, buf);
@@ -186,8 +187,8 @@ printshowfile(git_commit *commit)
 	git_tree *commit_tree = NULL, *parent_tree = NULL;
 	git_patch *patch = NULL;
 	git_diff *diff = NULL;
-	git_buf diffstatsbuf;
 	git_diff_stats *diffstats = NULL;
+	git_buf diffstatsbuf;
 	size_t i, j, k, ndeltas, nhunks = 0, nhunklines = 0;
 	char buf[GIT_OID_HEXSZ + 1], path[PATH_MAX];
 	FILE *fp;
@@ -202,24 +203,20 @@ printshowfile(git_commit *commit)
 	writeheader(fp);
 	printcommit(fp, commit);
 
-	error = git_commit_parent(&parent, commit, 0);
-	if (error)
+	if ((error = git_commit_parent(&parent, commit, 0)))
 		return;
-
-	error = git_commit_tree(&commit_tree, commit);
-	if (error)
+	if ((error = git_commit_tree(&commit_tree, commit)))
 		goto err;
-	error = git_commit_tree(&parent_tree, parent);
-	if (error)
+	if ((error = git_commit_tree(&parent_tree, parent)))
 		goto err;
-	error = git_diff_tree_to_tree(&diff, repo, commit_tree, parent_tree, NULL);
-	if (error)
+	if ((error = git_diff_tree_to_tree(&diff, repo, commit_tree, parent_tree, NULL)))
 		goto err;
 
 	/* diff stat */
 	if (!git_diff_get_stats(&diffstats, diff)) {
 		if (!git_diff_stats_to_buf(&diffstatsbuf, diffstats,
-			GIT_DIFF_STATS_FULL | GIT_DIFF_STATS_SHORT | GIT_DIFF_STATS_NUMBER | GIT_DIFF_STATS_INCLUDE_SUMMARY, 80)) {
+		    GIT_DIFF_STATS_FULL | GIT_DIFF_STATS_SHORT | GIT_DIFF_STATS_NUMBER |
+		    GIT_DIFF_STATS_INCLUDE_SUMMARY, 80)) {
 			fputs("<hr/>", fp);
 			fprintf(fp, "Diffstat:\n");
 			fputs(diffstatsbuf.ptr, fp);
@@ -242,7 +239,9 @@ printshowfile(git_commit *commit)
 
 #if 0
 		switch (delta->flags) {
-		case GIT_DIFF_FLAG_BINARY:       continue; /* TODO: binary data */
+		case GIT_DIFF_FLAG_BINARY:
+			/* "Binary files /dev/null and b/favicon.png differ" or so */
+			continue; /* TODO: binary data */
 		case GIT_DIFF_FLAG_NOT_BINARY:   break;
 		case GIT_DIFF_FLAG_VALID_ID:     break; /* TODO: check */
 		case GIT_DIFF_FLAG_EXISTS:       break; /* TODO: check */
@@ -286,27 +285,82 @@ writelog(FILE *fp)
 {
 	git_revwalk *w = NULL;
 	git_oid id;
-	git_commit *c = NULL;
-	size_t i;
+	git_commit *commit = NULL;
+	const git_signature *author;
+	git_diff_stats *stats;
+	git_tree *commit_tree = NULL, *parent_tree = NULL;
+	git_commit *parent = NULL;
+	git_diff *diff = NULL;
+	size_t i, nfiles, ndel, nadd;
+	const char *summary;
+	char buf[GIT_OID_HEXSZ + 1];
+	int error;
 
 	mkdir("commit", 0755);
 
 	git_revwalk_new(&w, repo);
 	git_revwalk_push_head(w);
 
+	/* TODO: also make "expanded" log ? (with message body) */
 	i = 0;
+	fputs("<table><thead><tr><td>Summary</td><td>Author</td><td align=\"right\">Age</td>"
+	      "<td align=\"right\">Files</td><td align=\"right\">+</td><td align=\"right\">-</td></tr></thead><tbody>", fp);
 	while (!git_revwalk_next(&id, w)) {
-		if (git_commit_lookup(&c, repo, &id))
+		if (git_commit_lookup(&commit, repo, &id))
 			return 1; /* TODO: error */
-		printcommit(fp, c);
-		printshowfile(c);
-		git_commit_free(c);
+
+		if ((error = git_commit_parent(&parent, commit, 0)))
+			continue; /* TODO: handle error */
+		if ((error = git_commit_tree(&commit_tree, commit)))
+			continue; /* TODO: handle error */
+		if ((error = git_commit_tree(&parent_tree, parent)))
+			continue; /* TODO: handle error */
+		if ((error = git_diff_tree_to_tree(&diff, repo, commit_tree, parent_tree, NULL)))
+			continue; /* TODO: handle error */
+		if (git_diff_get_stats(&stats, diff))
+			continue; /* TODO: handle error */
+
+		git_oid_tostr(buf, sizeof(buf), git_commit_id(commit));
+
+		ndel = git_diff_stats_deletions(stats);
+		nadd = git_diff_stats_insertions(stats);
+		nfiles = git_diff_stats_files_changed(stats);
+
+		/* TODO: show tag when commit has it */
+
+		author = git_commit_author(commit);
+		summary = git_commit_summary(commit);
+
+		fputs("<tr><td>", fp);
+		if (summary) {
+			fprintf(fp, "<a href=\"%scommit/%s.html\">", relpath, buf);
+			xmlencode(fp, summary, strlen(summary));
+			fputs("</a>", fp);
+		}
+		fputs("</td><td>", fp);
+		if (author)
+			xmlencode(fp, author->name, strlen(author->name));
+		fputs("</td><td align=\"right\">", fp);
+		printtime(fp, &author->when);
+		fputs("</td><td align=\"right\">", fp);
+		fprintf(fp, "%zu", nfiles);
+		fputs("</td><td align=\"right\">", fp);
+		fprintf(fp, "+%zu", nadd);
+		fputs("</td><td align=\"right\">", fp);
+		fprintf(fp, "-%zu", ndel);
+		fputs("</td></tr>", fp);
+
+		printshowfile(commit);
+
+		git_diff_free(diff);
+		git_commit_free(commit);
 
 		/* DEBUG */
 		i++;
 		if (i > 100)
 			break;
 	}
+	fprintf(fp, "</tbody></table>");
 	git_revwalk_free(w);
 
 	return 0;
@@ -348,7 +402,7 @@ writefiles(FILE *fp)
 	count = git_index_entrycount(index);
 	for (i = 0; i < count; i++) {
 		entry = git_index_get_byindex(index, i);
-		fprintf(fp, "name: %s, size: %lu, mode: %lu\n",
+		fprintf(fp, "name: %s, size: %" PRIu64 ", mode: %u\n",
 			entry->path, entry->file_size, entry->mode);
 	}
 
