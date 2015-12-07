@@ -174,7 +174,7 @@ printcommit(FILE *fp, git_commit *commit)
 
 	if ((count = (int)git_commit_parentcount(commit)) > 1) {
 		fprintf(fp, "<b>Merge:</b>");
-		for (i = 0; i < count; ++i) {
+		for (i = 0; i < count; i++) {
 			git_oid_tostr(buf, 8, git_commit_parent_id(commit, i));
 			fprintf(fp, " <a href=\"%scommit/%s.html\">%s</a>",
 				relpath, buf, buf);
@@ -430,7 +430,7 @@ printcommitatom(FILE *fp, git_commit *commit)
 
 	if ((count = (int)git_commit_parentcount(commit)) > 1) {
 		fprintf(fp, "Merge:");
-		for (i = 0; i < count; ++i) {
+		for (i = 0; i < count; i++) {
 			git_oid_tostr(buf, 8, git_commit_parent_id(commit, i));
 			fprintf(fp, " %s", buf);
 		}
@@ -569,12 +569,10 @@ main(int argc, char *argv[])
 		fclose(fpread);
 	}
 
-	/* read LICENSE */
-	if (!git_revparse_single(&obj, repo, "HEAD:LICENSE"))
-		haslicense = 1;
-	/* read README */
-	if (!git_revparse_single(&obj, repo, "HEAD:README"))
-		hasreadme = 1;
+	/* check LICENSE */
+	haslicense = !git_revparse_single(&obj, repo, "HEAD:LICENSE");
+	/* check README */
+	hasreadme = !git_revparse_single(&obj, repo, "HEAD:README");
 
 	/* read LICENSE */
 	if (!git_revparse_single(&obj, repo, "HEAD:LICENSE")) {
