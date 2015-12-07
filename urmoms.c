@@ -231,7 +231,7 @@ printshowfile(git_commit *commit)
 		goto err;
 	if ((error = git_commit_tree(&parent_tree, parent)))
 		goto err;
-	if ((error = git_diff_tree_to_tree(&diff, repo, commit_tree, parent_tree, NULL)))
+	if ((error = git_diff_tree_to_tree(&diff, repo, parent_tree, commit_tree, NULL)))
 		goto err;
 
 	/* diff stat */
@@ -346,7 +346,7 @@ writelog(FILE *fp)
 			continue; /* TODO: handle error */
 		if ((error = git_commit_tree(&parent_tree, parent)))
 			continue; /* TODO: handle error */
-		if ((error = git_diff_tree_to_tree(&diff, repo, commit_tree, parent_tree, NULL)))
+		if ((error = git_diff_tree_to_tree(&diff, repo, parent_tree, commit_tree, NULL)))
 			continue; /* TODO: handle error */
 		if (git_diff_get_stats(&stats, diff))
 			continue; /* TODO: handle error */
