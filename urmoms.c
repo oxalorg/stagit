@@ -48,7 +48,6 @@ commitinfo_free(struct commitinfo *ci)
 	if (!ci)
 		return;
 
-	/* TODO: print error ? */
 	git_diff_stats_free(ci->stats);
 	git_diff_free(ci->diff);
 	git_commit_free(ci->commit);
@@ -188,56 +187,34 @@ xbasename(const char *path)
 }
 
 void
-printtimez(FILE *fp, const git_time *intime)
+printtimeformat(FILE *fp, const git_time *intime, const char *fmt)
 {
 	struct tm *intm;
 	time_t t;
-	int offset, hours, minutes;
-	char sign, out[32];
-
-	offset = intime->offset;
-	if (offset < 0) {
-		sign = '-';
-		offset = -offset;
-	} else {
-		sign = '+';
-	}
-
-	hours = offset / 60;
-	minutes = offset % 60;
+	char out[32];
 
 	t = (time_t) intime->time + (intime->offset * 60);
-
 	intm = gmtime(&t);
-	strftime(out, sizeof(out), "%Y-%m-%dT%H:%M:%SZ", intm);
+	strftime(out, sizeof(out), fmt, intm);
 	fputs(out, fp);
+}
+
+void
+printtimez(FILE *fp, const git_time *intime)
+{
+	printtimeformat(fp, intime, "%Y-%m-%dT%H:%M:%SZ");
 }
 
 void
 printtime(FILE *fp, const git_time *intime)
 {
-	struct tm *intm;
-	time_t t;
-	int offset, hours, minutes;
-	char sign, out[32];
+	printtimeformat(fp, intime, "%a %b %e %T %Y");
+}
 
-	offset = intime->offset;
-	if (offset < 0) {
-		sign = '-';
-		offset = -offset;
-	} else {
-		sign = '+';
-	}
-
-	hours = offset / 60;
-	minutes = offset % 60;
-
-	t = (time_t) intime->time + (intime->offset * 60);
-
-	intm = gmtime(&t);
-	strftime(out, sizeof(out), "%a %b %e %T %Y", intm);
-
-	fprintf(fp, "%s %c%02d%02d", out, sign, hours, minutes);
+void
+printtimeshort(FILE *fp, const git_time *intime)
+{
+	printtimeformat(fp, intime, "%Y-%m-%d %H:%M");
 }
 
 void
