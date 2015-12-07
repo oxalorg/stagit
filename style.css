@@ -1,5 +1,5 @@
 body {
-	font-family: monospace, sans-serif;
+	font-family: monospace;
 	color: #333;
 	background-color: #fff;
 }
@@ -17,7 +17,7 @@ table thead td {
 }
 
 table td {
-	padding: 0 3px;
+	padding: 0 0.4em;
 }
 
 #content table tr:hover td {
@@ -25,7 +25,7 @@ table td {
 }
 
 h1, h2, h3, h4, h5, h6 {
-	font-size: 100%;
+	font-size: 1em;
 }
 
 .desc {
@@ -33,35 +33,9 @@ h1, h2, h3, h4, h5, h6 {
 	color: #777;
 }
 
-h1 img {
-	width: 32px;
-	height: 32px;
-}
-
 hr {
 	color: #777;
 	background-color: #777;
 	border: 0;
 	border-top: 1px solid #777;
-}
-
-pre {
-	font-family: monospace;
-}
-
-pre span.h {
-	color: blue;
-}
-
-pre span.i {
-	color: green;
-}
-
-pre span.d {
-	color: red;
-}
-
-pre span a {
-	text-decoration: none;
-	color: inherit;
 }
