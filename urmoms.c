@@ -186,15 +186,18 @@ printshowfile(git_commit *commit)
 	git_tree *commit_tree = NULL, *parent_tree = NULL;
 	git_patch *patch = NULL;
 	git_diff *diff = NULL;
+	git_buf diffstatsbuf;
+	git_diff_stats *diffstats = NULL;
 	size_t i, j, k, ndeltas, nhunks = 0, nhunklines = 0;
 	char buf[GIT_OID_HEXSZ + 1], path[PATH_MAX];
 	FILE *fp;
 	int error;
 
 	git_oid_tostr(buf, sizeof(buf), git_commit_id(commit));
-
 	snprintf(path, sizeof(path), "commit/%s.html", buf);
 	fp = efopen(path, "w+b");
+
+	memset(&diffstatsbuf, 0, sizeof(diffstatsbuf));
 
 	writeheader(fp);
 	printcommit(fp, commit);
@@ -205,16 +208,25 @@ printshowfile(git_commit *commit)
 
 	error = git_commit_tree(&commit_tree, commit);
 	if (error)
-		return;
+		goto err;
 	error = git_commit_tree(&parent_tree, parent);
 	if (error)
-		return;
-
+		goto err;
 	error = git_diff_tree_to_tree(&diff, repo, commit_tree, parent_tree, NULL);
 	if (error)
-		return;
+		goto err;
 
-	/* TODO: diff stat (files list and insertions/deletions) */
+	/* diff stat */
+	if (!git_diff_get_stats(&diffstats, diff)) {
+		if (!git_diff_stats_to_buf(&diffstatsbuf, diffstats,
+			GIT_DIFF_STATS_FULL | GIT_DIFF_STATS_SHORT | GIT_DIFF_STATS_NUMBER | GIT_DIFF_STATS_INCLUDE_SUMMARY, 80)) {
+			fputs("<hr/>", fp);
+			fprintf(fp, "Diffstat:\n");
+			fputs(diffstatsbuf.ptr, fp);
+		}
+		git_diff_stats_free(diffstats);
+	}
+	fputs("<hr/>", fp);
 
 	ndeltas = git_diff_num_deltas(diff);
 	for (i = 0; i < ndeltas; i++) {
@@ -261,6 +273,11 @@ printshowfile(git_commit *commit)
 	git_diff_free(diff);
 
 	writefooter(fp);
+	fclose(fp);
+	return;
+
+err:
+	git_buf_free(&diffstatsbuf);
 	fclose(fp);
 }
 
