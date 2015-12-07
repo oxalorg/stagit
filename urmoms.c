@@ -22,10 +22,10 @@ static int hasreadme, haslicense;
 int
 writeheader(FILE *fp)
 {
-	fprintf(fp, "<!DOCTYPE HTML>"
+	fputs("<!DOCTYPE HTML>"
 		"<html dir=\"ltr\" lang=\"en\"><head>"
 		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />"
-		"<meta http-equiv=\"Content-Language\" content=\"en\" />");
+		"<meta http-equiv=\"Content-Language\" content=\"en\" />", fp);
 	fprintf(fp, "<title>%s%s%s</title>", name, description[0] ? " - " : "", description);
 	fprintf(fp, "<link rel=\"icon\" type=\"image/png\" href=\"%sfavicon.png\" />", relpath);
 	fprintf(fp, "<link rel=\"alternate\" type=\"application/atom+xml\" title=\"%s Atom Feed\" href=\"%satom.xml\" />",
@@ -35,13 +35,13 @@ writeheader(FILE *fp)
 	fprintf(fp, "<h1><img src=\"%slogo.png\" alt=\"\" /> %s</h1>", relpath, name);
 	fprintf(fp, "<span class=\"desc\">%s</span><br/>", description);
 	fprintf(fp, "<a href=\"%slog.html\">Log</a> |", relpath);
-	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>| ", relpath);
+	fprintf(fp, "<a href=\"%sfiles.html\">Files</a> | ", relpath);
 	fprintf(fp, "<a href=\"%sstats.html\">Stats</a>", relpath);
 	if (hasreadme)
 		fprintf(fp, " | <a href=\"%sreadme.html\">README</a>", relpath);
 	if (haslicense)
 		fprintf(fp, " | <a href=\"%slicense.html\">LICENSE</a>", relpath);
-	fprintf(fp, "</center><hr/><pre>");
+	fputs("</center><hr/><pre>", fp);
 
 	return 0;
 }
@@ -49,9 +49,7 @@ writeheader(FILE *fp)
 int
 writefooter(FILE *fp)
 {
-	fprintf(fp, "</pre></body></html>");
-
-	return 0;
+	return !fputs("</pre></body></html>", fp);
 }
 
 FILE *
@@ -102,6 +100,32 @@ xbasename(const char *path)
 	free(p);
 
 	return b;
+}
+
+void
+printtimez(FILE *fp, const git_time *intime)
+{
+	struct tm *intm;
+	time_t t;
+	int offset, hours, minutes;
+	char sign, out[32];
+
+	offset = intime->offset;
+	if (offset < 0) {
+		sign = '-';
+		offset = -offset;
+	} else {
+		sign = '+';
+	}
+
+	hours = offset / 60;
+	minutes = offset % 60;
+
+	t = (time_t) intime->time + (intime->offset * 60);
+
+	intm = gmtime(&t);
+	strftime(out, sizeof(out), "%Y-%m-%dT%H:%M:%SZ", intm);
+	fputs(out, fp);
 }
 
 void
@@ -328,6 +352,7 @@ writelog(FILE *fp)
 
 		/* TODO: show tag when commit has it */
 
+		/* TODO: collect stats per author and make stats.html page */
 		author = git_commit_author(commit);
 		summary = git_commit_summary(commit);
 
@@ -366,29 +391,107 @@ writelog(FILE *fp)
 	return 0;
 }
 
-#if 0
+void
+printcommitatom(FILE *fp, git_commit *commit)
+{
+	const git_signature *sig;
+	char buf[GIT_OID_HEXSZ + 1];
+	int i, count;
+	const char *scan, *eol, *summary;
+
+	fputs("<entry>", fp);
+
+	/* TODO: show tag when commit has it */
+	git_oid_tostr(buf, sizeof(buf), git_commit_id(commit));
+	fprintf(fp, "<id>%s</id>", buf);
+
+	sig = git_commit_author(commit);
+
+	if (sig) {
+		fputs("<updated>", fp);
+		printtimez(fp, &sig->when);
+		fputs("</updated>", fp);
+	}
+
+	if ((summary = git_commit_summary(commit))) {
+		fputs("<title>", fp);
+		xmlencode(fp, summary, strlen(summary));
+		fputs("</title>", fp);
+	}
+
+	fputs("<content type=\"text\">", fp);
+	fprintf(fp, "commit %s\n", buf);
+	if (git_oid_tostr(buf, sizeof(buf), git_commit_parent_id(commit, 0)))
+		fprintf(fp, "parent %s\n", buf);
+
+	if ((count = (int)git_commit_parentcount(commit)) > 1) {
+		fprintf(fp, "Merge:");
+		for (i = 0; i < count; ++i) {
+			git_oid_tostr(buf, 8, git_commit_parent_id(commit, i));
+			fprintf(fp, " %s", buf);
+		}
+		fputc('\n', fp);
+	}
+
+	if (sig) {
+		fprintf(fp, "Author: ");
+		xmlencode(fp, sig->name, strlen(sig->name));
+		fprintf(fp, " &lt;");
+		xmlencode(fp, sig->email, strlen(sig->email));
+		fprintf(fp, "&gt;\nDate:   ");
+		printtime(fp, &sig->when);
+	}
+	fputc('\n', fp);
+
+	for (scan = git_commit_message(commit); scan && *scan;) {
+		for (eol = scan; *eol && *eol != '\n'; ++eol)	/* find eol */
+			;
+
+		fprintf(fp, "    %.*s\n", (int) (eol - scan), scan);
+		scan = *eol ? eol + 1 : NULL;
+	}
+	fputc('\n', fp);
+	fputs("</content>", fp);
+	if (sig) {
+		fputs("<author><name>", fp);
+		xmlencode(fp, sig->name, strlen(sig->name));
+		fputs("</name><email>", fp);
+		xmlencode(fp, sig->email, strlen(sig->email));
+		fputs("</email></author>", fp);
+	}
+	fputs("</entry>", fp);
+}
+
 int
 writeatom(FILE *fp)
 {
 	git_revwalk *w = NULL;
 	git_oid id;
 	git_commit *c = NULL;
+	size_t i, m = 100; /* max */
+
+	fputs("<feed xmlns=\"http://www.w3.org/2005/Atom\"><title>", fp);
+	xmlencode(fp, name, strlen(name));
+	fputs(", branch master</title><subtitle>", fp);
+
+	xmlencode(fp, description, strlen(description));
+	fputs("</subtitle>", fp);
 
 	git_revwalk_new(&w, repo);
 	git_revwalk_push_head(w);
 
-	while (!git_revwalk_next(&id, w)) {
+	for (i = 0; i < m && !git_revwalk_next(&id, w); i++) {
 		if (git_commit_lookup(&c, repo, &id))
 			return 1; /* TODO: error */
-		printcommit(fp, c);
-		printshowfile(c);
+		printcommitatom(fp, c);
 		git_commit_free(c);
 	}
 	git_revwalk_free(w);
 
+	fputs("</feed>", fp);
+
 	return 0;
 }
-#endif
 
 int
 writefiles(FILE *fp)
@@ -408,32 +511,6 @@ writefiles(FILE *fp)
 
 	return 0;
 }
-
-#if 0
-int
-writebranches(FILE *fp)
-{
-	git_branch_iterator *branchit = NULL;
-	git_branch_t branchtype;
-	git_reference *branchref;
-	char branchbuf[BUFSIZ] = "";
-	int status;
-
-	git_branch_iterator_new(&branchit, repo, GIT_BRANCH_LOCAL);
-
-	while ((status = git_branch_next(&branchref, &branchtype, branchit)) == GIT_ITEROVER) {
-		git_reference_normalize_name(branchbuf, sizeof(branchbuf),
-			git_reference_name(branchref),
-			GIT_REF_FORMAT_ALLOW_ONELEVEL | GIT_REF_FORMAT_REFSPEC_SHORTHAND);
-
-		/* fprintf(fp, "branch: |%s|\n", branchbuf); */
-	}
-
-	git_branch_iterator_free(branchit);
-
-	return 0;
-}
-#endif
 
 void
 writeblobhtml(FILE *fp, const git_blob *blob)
@@ -516,11 +593,9 @@ main(int argc, char *argv[])
 	writefooter(fp);
 	fclose(fp);
 
-#if 0
 	fp = efopen("atom.xml", "w+b");
 	writeatom(fp);
 	fclose(fp);
-#endif
 
 	fp = efopen("files.html", "w+b");
 	writeheader(fp);
