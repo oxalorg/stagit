@@ -503,11 +503,21 @@ writefiles(FILE *fp)
 	git_repository_index(&index, repo);
 
 	count = git_index_entrycount(index);
+	fputs("<table><thead><tr><td>Mode</td><td>Name</td><td>Size</td></tr></thead><tbody>", fp);
+
 	for (i = 0; i < count; i++) {
 		entry = git_index_get_byindex(index, i);
-		fprintf(fp, "name: %s, size: %" PRIu64 ", mode: %u\n",
-			entry->path, entry->file_size, entry->mode);
+		fputs("<tr><td>", fp);
+		fprintf(fp, "%u", entry->mode); /* TODO: fancy print, like: "-rw-r--r--" */
+		fprintf(fp, "</td><td><a href=\"%sfile/", relpath);
+		xmlencode(fp, entry->path, strlen(entry->path));
+		fputs("\">", fp);
+		xmlencode(fp, entry->path, strlen(entry->path));
+		fputs("</a></td><td align=\"right\">", fp);
+		fprintf(fp, "%" PRIu64, entry->file_size);
+		fputs("</td></tr>", fp);
 	}
+	fputs("</tbody></table>", fp);
 
 	return 0;
 }
