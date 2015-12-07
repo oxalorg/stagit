@@ -1,1 +1,8 @@
-to use urmom is quite easy...
+
+Features
+--------
+
+- Log and diffstat per commit.
+- Show file tree.
+- Detect README and LICENSE file to make a webpage.
+- Atom feed git log.

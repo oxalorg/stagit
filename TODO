@@ -1,8 +1,11 @@
+- make lines in diffs a link.
+- make lines in files a link?
+
 - write atom feed (git log).
 
 - program to write index for multiple repos: urmoms-index <repodir>...
 
-- read README and LICENSE from repo (so for bare repos it works too).
+x read README and LICENSE from repo (so for bare repos it works too).
   rewrite concat to escape HTML ?
 
 - make baseurl in HTML page (header) configurable.
