@@ -367,7 +367,7 @@ writelog(FILE *fp)
 	git_revwalk_push_head(w);
 
 	/* TODO: also make "expanded" log ? (with message body) */
-	fputs("<table><thead>\n<tr><td>Commit message</td><td>Author</td><td align=\"right\">Age</td>"
+	fputs("<table><thead>\n<tr><td align=\"right\">Age</td><td>Commit message</td><td>Author</td>"
 	      "<td align=\"right\">Files</td><td align=\"right\">+</td><td align=\"right\">-</td></tr>\n</thead><tbody>\n", fp);
 	while (!git_revwalk_next(&id, w)) {
 		relpath = "";
