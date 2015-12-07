@@ -184,10 +184,13 @@ printcommit(FILE *fp, git_commit *commit)
 	if ((sig = git_commit_author(commit)) != NULL) {
 		fprintf(fp, "Author: ");
 		xmlencode(fp, sig->name, strlen(sig->name));
-		fprintf(fp, " &lt;");
+		fprintf(fp, " &lt;<a href=\"mailto:");
 		xmlencode(fp, sig->email, strlen(sig->email));
-		fprintf(fp, "&gt;\nDate:   ");
+		fputs("\">", fp);
+		xmlencode(fp, sig->email, strlen(sig->email));
+		fputs("</a>&gt;\nDate:   ", fp);
 		printtime(fp, &sig->when);
+		fputc('\n', fp);
 	}
 	fputc('\n', fp);
 
