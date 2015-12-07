@@ -358,6 +358,7 @@ writelog(FILE *fp)
 	struct commitinfo *ci;
 	git_revwalk *w = NULL;
 	git_oid id;
+	size_t len;
 	int ret = 0;
 
 	mkdir("commit", 0755);
@@ -374,19 +375,23 @@ writelog(FILE *fp)
 		if (!(ci = commitinfo_getbyoid(&id)))
 			break;
 
-		fputs("<tr><td>", fp);
+		fputs("<tr><td align=\"right\">", fp);
+		if (ci->author)
+			printtimeshort(fp, &(ci->author->when));
+		fputs("</td><td>", fp);
 		if (ci->summary) {
 			fprintf(fp, "<a href=\"%scommit/%s.html\">", relpath, ci->oid);
-			xmlencode(fp, ci->summary, strlen(ci->summary));
+			if ((len = strlen(ci->summary)) > 79) {
+				xmlencode(fp, ci->summary, 76);
+				fputs("...", fp);
+			} else {
+				xmlencode(fp, ci->summary, len);
+			}
 			fputs("</a>", fp);
 		}
 		fputs("</td><td>", fp);
 		if (ci->author)
 			xmlencode(fp, ci->author->name, strlen(ci->author->name));
-
-		fputs("</td><td align=\"right\">", fp);
-		if (ci->author)
-			printtime(fp, &(ci->author->when));
 		fputs("</td><td align=\"right\">", fp);
 		fprintf(fp, "%zu", ci->filecount);
 		fputs("</td><td align=\"right\">", fp);
