@@ -332,13 +332,18 @@ writelog(FILE *fp)
 	git_revwalk_push_head(w);
 
 	/* TODO: also make "expanded" log ? (with message body) */
-	i = 0;
-	fputs("<table><thead><tr><td>Summary</td><td>Author</td><td align=\"right\">Age</td>"
-	      "<td align=\"right\">Files</td><td align=\"right\">+</td><td align=\"right\">-</td></tr></thead><tbody>", fp);
+	i = 0; /* DEBUG: to limit commits */
+	fputs("<table><thead>\n<tr><td>Commit message</td><td>Author</td><td align=\"right\">Age</td>"
+	      "<td align=\"right\">Files</td><td align=\"right\">+</td><td align=\"right\">-</td></tr>\n</thead><tbody>\n", fp);
 	while (!git_revwalk_next(&id, w)) {
+		/* DEBUG */
+		if (i++ > 100)
+			break;
+
+		relpath = "";
+
 		if (git_commit_lookup(&commit, repo, &id))
 			return 1; /* TODO: error */
-
 		if ((error = git_commit_parent(&parent, commit, 0)))
 			continue; /* TODO: handle error */
 		if ((error = git_commit_tree(&commit_tree, commit)))
@@ -379,20 +384,17 @@ writelog(FILE *fp)
 		fprintf(fp, "+%zu", nadd);
 		fputs("</td><td align=\"right\">", fp);
 		fprintf(fp, "-%zu", ndel);
-		fputs("</td></tr>", fp);
+		fputs("</td></tr>\n", fp);
 
+		relpath = "../";
 		printshowfile(commit);
 
 		git_diff_free(diff);
 		git_commit_free(commit);
-
-		/* DEBUG */
-		i++;
-		if (i > 100)
-			break;
 	}
 	fprintf(fp, "</tbody></table>");
 	git_revwalk_free(w);
+	relpath = "";
 
 	return 0;
 }
