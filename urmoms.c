@@ -1,3 +1,5 @@
+#include <sys/stat.h>
+
 #include <err.h>
 #include <libgen.h>
 #include <limits.h>
@@ -9,12 +11,47 @@
 
 static git_repository *repo;
 
-static const char *relpath;
-static const char *repodir = ".";
+static const char *relpath = "";
+static const char *repodir;
 
 static char name[255];
 static char description[255];
 static int hasreadme, haslicense;
+
+int
+writeheader(FILE *fp)
+{
+	fprintf(fp, "<!DOCTYPE HTML>"
+		"<html dir=\"ltr\" lang=\"en\"><head>"
+		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />"
+		"<meta http-equiv=\"Content-Language\" content=\"en\" />");
+	fprintf(fp, "<title>%s%s%s</title>", name, description[0] ? " - " : "", description);
+	fprintf(fp, "<link rel=\"icon\" type=\"image/png\" href=\"%sfavicon.png\" />", relpath);
+	fprintf(fp, "<link rel=\"alternate\" type=\"application/atom+xml\" title=\"%s Atom Feed\" href=\"%satom.xml\" />",
+		name, relpath);
+	fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />"
+		"</head><body><center>");
+	fprintf(fp, "<h1><img src=\"%slogo.png\" alt=\"\" /> %s</h1>", relpath, name);
+	fprintf(fp, "<span class=\"desc\">%s</span><br/>", description);
+	fprintf(fp, "<a href=\"%slog.html\">Log</a> |", relpath);
+	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>| ", relpath);
+	fprintf(fp, "<a href=\"%sstats.html\">Stats</a>", relpath);
+	if (hasreadme)
+		fprintf(fp, " | <a href=\"%sreadme.html\">README</a>", relpath);
+	if (haslicense)
+		fprintf(fp, " | <a href=\"%slicense.html\">LICENSE</a>", relpath);
+	fprintf(fp, "</center><hr/><pre>");
+
+	return 0;
+}
+
+int
+writefooter(FILE *fp)
+{
+	fprintf(fp, "</pre></body></html>");
+
+	return 0;
+}
 
 FILE *
 efopen(const char *name, const char *flags)
@@ -67,8 +104,8 @@ xbasename(const char *path)
 	return b;
 }
 
-static void
-printtime(FILE *fp, const git_time *intime, const char *prefix)
+void
+printtime(FILE *fp, const git_time *intime)
 {
 	struct tm *intm;
 	time_t t;
@@ -91,10 +128,10 @@ printtime(FILE *fp, const git_time *intime, const char *prefix)
 	intm = gmtime(&t);
 	strftime(out, sizeof(out), "%a %b %e %T %Y", intm);
 
-	fprintf(fp, "%s%s %c%02d%02d\n", prefix, out, sign, hours, minutes);
+	fprintf(fp, "%s %c%02d%02d\n", out, sign, hours, minutes);
 }
 
-static void
+void
 printcommit(FILE *fp, git_commit *commit)
 {
 	const git_signature *sig;
@@ -103,22 +140,31 @@ printcommit(FILE *fp, git_commit *commit)
 	const char *scan, *eol;
 
 	git_oid_tostr(buf, sizeof(buf), git_commit_id(commit));
-	fprintf(fp, "commit <a href=\"commit/%s.html\">%s</a>\n", buf, buf);
+	fprintf(fp, "commit <a href=\"%scommit/%s.html\">%s</a>\n",
+		relpath, buf, buf);
+
+	if (git_oid_tostr(buf, sizeof(buf), git_commit_parent_id(commit, 0)))
+		fprintf(fp, "parent <a href=\"%scommit/%s.html\">%s</a>\n",
+			relpath, buf, buf);
 
 	if ((count = (int)git_commit_parentcount(commit)) > 1) {
 		fprintf(fp, "Merge:");
 		for (i = 0; i < count; ++i) {
 			git_oid_tostr(buf, 8, git_commit_parent_id(commit, i));
-			fprintf(fp, " %s", buf);
+			fprintf(fp, " <a href=\"%scommit/%s.html\">%s</a>",
+				relpath, buf, buf);
 		}
-		fprintf(fp, "\n");
+		fputc('\n', fp);
 	}
 	if ((sig = git_commit_author(commit)) != NULL) {
-		fprintf(fp, "Author: <a href=\"author/%s.html\">%s</a> <%s>\n",
-			sig->name, sig->name, sig->email);
-		printtime(fp, &sig->when, "Date:   ");
+		fprintf(fp, "Author: ");
+		xmlencode(fp, sig->name, strlen(sig->name));
+		fprintf(fp, " &lt;");
+		xmlencode(fp, sig->email, strlen(sig->email));
+		fprintf(fp, "&gt;\nDate:   ");
+		printtime(fp, &sig->when);
 	}
-	fprintf(fp, "\n");
+	fputc('\n', fp);
 
 	for (scan = git_commit_message(commit); scan && *scan;) {
 		for (eol = scan; *eol && *eol != '\n'; ++eol)	/* find eol */
@@ -127,79 +173,131 @@ printcommit(FILE *fp, git_commit *commit)
 		fprintf(fp, "    %.*s\n", (int) (eol - scan), scan);
 		scan = *eol ? eol + 1 : NULL;
 	}
-	fprintf(fp, "\n");
+	fputc('\n', fp);
 }
 
-static void
-printcommitdiff(FILE *fp, git_commit *commit)
+void
+printshowfile(git_commit *commit)
 {
-	const git_signature *sig;
-	char buf[GIT_OID_HEXSZ + 1];
-	int i, count;
-	const char *scan, *eol;
+	const git_diff_delta *delta = NULL;
+	const git_diff_hunk *hunk = NULL;
+	const git_diff_line *line = NULL;
+	git_commit *parent = NULL;
+	git_tree *commit_tree = NULL, *parent_tree = NULL;
+	git_patch *patch = NULL;
+	git_diff *diff = NULL;
+	size_t i, j, k, ndeltas, nhunks = 0, nhunklines = 0;
+	char buf[GIT_OID_HEXSZ + 1], path[PATH_MAX];
+	FILE *fp;
+	int error;
 
 	git_oid_tostr(buf, sizeof(buf), git_commit_id(commit));
-	fprintf(fp, "commit <a href=\"commit/%s.html\">%s</a>\n", buf, buf);
 
-	if ((count = (int)git_commit_parentcount(commit)) > 1) {
-		fprintf(fp, "Merge:");
-		for (i = 0; i < count; ++i) {
-			git_oid_tostr(buf, 8, git_commit_parent_id(commit, i));
-			fprintf(fp, " %s", buf);
+	snprintf(path, sizeof(path), "commit/%s.html", buf);
+	fp = efopen(path, "w+b");
+
+	writeheader(fp);
+	printcommit(fp, commit);
+
+	error = git_commit_parent(&parent, commit, 0);
+	if (error)
+		return;
+
+	error = git_commit_tree(&commit_tree, commit);
+	if (error)
+		return;
+	error = git_commit_tree(&parent_tree, parent);
+	if (error)
+		return;
+
+	error = git_diff_tree_to_tree(&diff, repo, commit_tree, parent_tree, NULL);
+	if (error)
+		return;
+
+	/* TODO: diff stat (files list and insertions/deletions) */
+
+	ndeltas = git_diff_num_deltas(diff);
+	for (i = 0; i < ndeltas; i++) {
+		if (git_patch_from_diff(&patch, diff, i)) {
+			git_patch_free(patch);
+			break; /* TODO: handle error */
 		}
-		fprintf(fp, "\n");
+
+		delta = git_patch_get_delta(patch);
+		fprintf(fp, "diff --git a/<a href=\"%s%s\">%s</a> b/<a href=\"%s%s\">%s</a>\n",
+			relpath, delta->old_file.path, delta->old_file.path,
+			relpath, delta->new_file.path, delta->new_file.path);
+
+#if 0
+		switch (delta->flags) {
+		case GIT_DIFF_FLAG_BINARY:       continue; /* TODO: binary data */
+		case GIT_DIFF_FLAG_NOT_BINARY:   break;
+		case GIT_DIFF_FLAG_VALID_ID:     break; /* TODO: check */
+		case GIT_DIFF_FLAG_EXISTS:       break; /* TODO: check */
+		}
+#endif
+
+		nhunks = git_patch_num_hunks(patch);
+		for (j = 0; j < nhunks; j++) {
+			if (git_patch_get_hunk(&hunk, &nhunklines, patch, j))
+				break; /* TODO: handle error ? */
+
+			fprintf(fp, "%s\n", hunk->header);
+
+			for (k = 0; ; k++) {
+				if (git_patch_get_line_in_hunk(&line, patch, j, k))
+					break;
+				if (line->old_lineno == -1)
+					fputc('+', fp);
+				else if (line->new_lineno == -1)
+					fputc('-', fp);
+				else
+					fputc(' ', fp);
+				xmlencode(fp, line->content, line->content_len);
+			}
+		}
+		git_patch_free(patch);
 	}
-	if ((sig = git_commit_author(commit)) != NULL) {
-		fprintf(fp, "Author: <a href=\"author/%s.html\">%s</a> <%s>\n",
-			sig->name, sig->name, sig->email);
-		printtime(fp, &sig->when, "Date:   ");
-	}
-	fprintf(fp, "\n");
+	git_diff_free(diff);
 
-	for (scan = git_commit_message(commit); scan && *scan;) {
-		for (eol = scan; *eol && *eol != '\n'; ++eol)	/* find eol */
-			;
-
-		fprintf(fp, "    %.*s\n", (int) (eol - scan), scan);
-		scan = *eol ? eol + 1 : NULL;
-	}
-	fprintf(fp, "\n");
-}
-
-int
-writeheader(FILE *fp)
-{
-	fprintf(fp, "<!DOCTYPE HTML>"
-		"<html dir=\"ltr\" lang=\"en\"><head>"
-		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />"
-		"<meta http-equiv=\"Content-Language\" content=\"en\" />");
-	fprintf(fp, "<title>%s%s%s</title>", name, description[0] ? " - " : "", description);
-	fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />"
-		"</head><body><center>");
-	fprintf(fp, "<h1><img src=\"%slogo.png\" alt=\"\" /> %s</h1>", relpath, name);
-	fprintf(fp, "<span class=\"desc\">%s</span><br/>", description);
-	fprintf(fp, "<a href=\"%slog.html\">Log</a> |", relpath);
-	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>| ", relpath);
-	fprintf(fp, "<a href=\"%sstats.html\">Stats</a>", relpath);
-	if (hasreadme)
-		fprintf(fp, " | <a href=\"%sreadme.html\">README</a>", relpath);
-	if (haslicense)
-		fprintf(fp, " | <a href=\"%slicense.html\">LICENSE</a>", relpath);
-	fprintf(fp, "</center><hr/><pre>");
-
-	return 0;
-}
-
-int
-writefooter(FILE *fp)
-{
-	fprintf(fp, "</pre></body></html>");
-
-	return 0;
+	writefooter(fp);
+	fclose(fp);
 }
 
 int
 writelog(FILE *fp)
+{
+	git_revwalk *w = NULL;
+	git_oid id;
+	git_commit *c = NULL;
+	size_t i;
+
+	mkdir("commit", 0755);
+
+	git_revwalk_new(&w, repo);
+	git_revwalk_push_head(w);
+
+	i = 0;
+	while (!git_revwalk_next(&id, w)) {
+		if (git_commit_lookup(&c, repo, &id))
+			return 1; /* TODO: error */
+		printcommit(fp, c);
+		printshowfile(c);
+		git_commit_free(c);
+
+		/* DEBUG */
+		i++;
+		if (i > 100)
+			break;
+	}
+	git_revwalk_free(w);
+
+	return 0;
+}
+
+#if 0
+int
+writeatom(FILE *fp)
 {
 	git_revwalk *w = NULL;
 	git_oid id;
@@ -210,14 +308,16 @@ writelog(FILE *fp)
 
 	while (!git_revwalk_next(&id, w)) {
 		if (git_commit_lookup(&c, repo, &id))
-			return 1;
+			return 1; /* TODO: error */
 		printcommit(fp, c);
+		printshowfile(c);
 		git_commit_free(c);
 	}
 	git_revwalk_free(w);
 
 	return 0;
 }
+#endif
 
 int
 writefiles(FILE *fp)
@@ -251,7 +351,9 @@ writebranches(FILE *fp)
 	git_branch_iterator_new(&branchit, repo, GIT_BRANCH_LOCAL);
 
 	while ((status = git_branch_next(&branchref, &branchtype, branchit)) == GIT_ITEROVER) {
-		git_reference_normalize_name(branchbuf, sizeof(branchbuf), git_reference_name(branchref), GIT_REF_FORMAT_ALLOW_ONELEVEL | GIT_REF_FORMAT_REFSPEC_SHORTHAND);
+		git_reference_normalize_name(branchbuf, sizeof(branchbuf),
+			git_reference_name(branchref),
+			GIT_REF_FORMAT_ALLOW_ONELEVEL | GIT_REF_FORMAT_REFSPEC_SHORTHAND);
 
 		/* fprintf(fp, "branch: |%s|\n", branchbuf); */
 	}
@@ -337,11 +439,17 @@ main(int argc, char *argv[])
 		hasreadme = 1;
 	}
 
-	fp = efopen("logs.html", "w+b");
+	fp = efopen("log.html", "w+b");
 	writeheader(fp);
 	writelog(fp);
 	writefooter(fp);
 	fclose(fp);
+
+#if 0
+	fp = efopen("atom.xml", "w+b");
+	writeatom(fp);
+	fclose(fp);
+#endif
 
 	fp = efopen("files.html", "w+b");
 	writeheader(fp);
