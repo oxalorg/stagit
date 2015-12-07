@@ -1,3 +1,5 @@
+- use UTC+0000 timestamps, dont use server time.
+
 - make lines in diffs a link.
 - make lines in files a link?
 
