@@ -116,8 +116,9 @@ writeheader(FILE *fp)
 	fprintf(fp, "<link rel=\"alternate\" type=\"application/atom+xml\" title=\"%s Atom Feed\" href=\"%satom.xml\" />\n",
 		name, relpath);
 	fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"%sstyle.css\" />\n", relpath);
-	fputs("</head>\n<body>\n<center>\n", fp);
-	fprintf(fp, "<h1><img src=\"%slogo.png\" alt=\"\" width=\"32\" height=\"32\" /> %s <span class=\"desc\">%s</span></h1>\n",
+	fputs("</head>\n<body>\n\n", fp);
+	fprintf(fp, "<table><tr><td><img src=\"%slogo.png\" alt=\"\" width=\"32\" height=\"32\" /></td>"
+	        "<td><h1>%s</h1><span class=\"desc\">%s</span></td></tr><tr><td></td><td>\n",
 		relpath, name, description);
 	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
 	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>", relpath);
@@ -125,7 +126,7 @@ writeheader(FILE *fp)
 		fprintf(fp, " | <a href=\"%sreadme.html\">README</a>", relpath);
 	if (haslicense)
 		fprintf(fp, " | <a href=\"%slicense.html\">LICENSE</a>", relpath);
-	fputs("\n</center>\n<hr/>\n<pre>", fp);
+	fputs("</td></tr></table>\n<hr/><div id=\"content\">\n", fp);
 
 	return 0;
 }
@@ -133,7 +134,7 @@ writeheader(FILE *fp)
 int
 writefooter(FILE *fp)
 {
-	return !fputs("</pre>\n</body>\n</html>", fp);
+	return !fputs("</div></body>\n</html>", fp);
 }
 
 FILE *
@@ -284,6 +285,7 @@ printshowfile(struct commitinfo *ci)
 
 	fp = efopen(path, "w+b");
 	writeheader(fp);
+	fputs("<pre>\n", fp);
 	printcommit(fp, ci);
 
 	memset(&statsbuf, 0, sizeof(statsbuf));
@@ -347,6 +349,7 @@ printshowfile(struct commitinfo *ci)
 	}
 	git_buf_free(&statsbuf);
 
+	fputs( "</pre>\n", fp);
 	writefooter(fp);
 	fclose(fp);
 	return;
@@ -584,9 +587,11 @@ main(int argc, char *argv[])
 	if (!git_revparse_single(&obj, repo, "HEAD:LICENSE")) {
 		fp = efopen("license.html", "w+b");
 		writeheader(fp);
+		fputs("<pre>\n", fp);
 		writeblobhtml(fp, (git_blob *)obj);
 		if (ferror(fp))
 			err(1, "fwrite");
+		fputs("</pre>\n", fp);
 		writefooter(fp);
 
 		fclose(fp);
@@ -596,9 +601,11 @@ main(int argc, char *argv[])
 	if (!git_revparse_single(&obj, repo, "HEAD:README")) {
 		fp = efopen("readme.html", "w+b");
 		writeheader(fp);
+		fputs("<pre>\n", fp);
 		writeblobhtml(fp, (git_blob *)obj);
 		if (ferror(fp))
 			err(1, "fwrite");
+		fputs("</pre>\n", fp);
 		writefooter(fp);
 		fclose(fp);
 	}

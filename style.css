@@ -1,5 +1,5 @@
 body {
-	font-family: sans-serif;
+	font-family: monospace, sans-serif;
 	color: #333;
 	background-color: #fff;
 }
@@ -20,8 +20,8 @@ table td {
 	padding: 0 3px;
 }
 
-table tr:hover td {
-	background-color: #ddd;
+#content table tr:hover td {
+	background-color: #eee;
 }
 
 h1, h2, h3, h4, h5, h6 {
