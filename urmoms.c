@@ -242,8 +242,7 @@ printshowfile(git_commit *commit)
 	/* diff stat */
 	if (!git_diff_get_stats(&diffstats, diff)) {
 		if (!git_diff_stats_to_buf(&diffstatsbuf, diffstats,
-		    GIT_DIFF_STATS_FULL | GIT_DIFF_STATS_SHORT | GIT_DIFF_STATS_NUMBER |
-		    GIT_DIFF_STATS_INCLUDE_SUMMARY, 80)) {
+		    GIT_DIFF_STATS_FULL | GIT_DIFF_STATS_SHORT, 80)) {
 			fputs("<hr/>", fp);
 			fprintf(fp, "Diffstat:\n");
 			fputs(diffstatsbuf.ptr, fp);
