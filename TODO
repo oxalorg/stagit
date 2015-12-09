@@ -1,32 +1,23 @@
-- time format: YYYY-MM-DD HH:MM    (UTC+00:00, but dont show timezone).
-- max line length in log should be 72 bytes.
-
-- use UTC+0000 timestamps, dont use server time.
-
-- make lines in diffs a link.
-- make lines in files a link?
-
-- write atom feed (git log).
-
-- program to write index for multiple repos: urmoms-index <repodir>...
-
-x read README and LICENSE from repo (so for bare repos it works too).
-  rewrite concat to escape HTML ?
-
-- make baseurl in HTML page (header) configurable.
-- be smarter about changes (an existing commit can never change the diff page).
-- add raw link to latest files: raw/file...
-- add summary page?
-- add diffstat to diff page? + and - lines summary?
-- escape HTML: < > ' " etc, maybe even use CDATA ?
-- shorter date format for logs.html page.
+performance:
+- optimize git_diff_get_stats.
 - speed up generating files.
-- for files link to the commit but make the filename a link anchor.
-- link to lines in file view! / commit log?
-- show all the tags and branches as list.
-- show commits for all tags and branches???
-- able to add link to git url: git://url... per project.
+- be smarter about changes (an existing commit can never change the diff page).
+? add pagination to log.html for > 5000 entries?
 
-x default to log view (stateless).
-x no tarballs, snapshots and such.
-x add stylesheet + 2f30/suckless logo.
+display:
+- time format: YYYY-MM-DD HH:MM (always use UTC+00:00, but don't show timezone).
+
+layout:
+- make top menu look nicer in links/lynx again.
+
+features:
+- add raw link to latest files: raw/file...
+- checkout files in separate directory.
+- format text files in repo with lines, make the link linkable with an "anchor".
+- able to add link to git url: git://url... per project.
+? add summary page?
+? show all the tags and branches as list.
+? show commits for more tags and branches?
+
+idea:
+- program to write index for multiple repos: urmoms-index <repodir>...
