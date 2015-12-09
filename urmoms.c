@@ -557,7 +557,8 @@ main(int argc, char *argv[])
 
 	git_libgit2_init();
 
-	if ((status = git_repository_open(&repo, repodir)) < 0) {
+	if ((status = git_repository_open_ext(&repo, repodir,
+		GIT_REPOSITORY_OPEN_NO_SEARCH, NULL)) < 0) {
 		e = giterr_last();
 		fprintf(stderr, "error %d/%d: %s\n", status, e->klass, e->message);
 		return status;
