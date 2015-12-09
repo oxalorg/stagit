@@ -50,18 +50,14 @@ pre .h {
 	color: darkcyan;
 }
 
-pre .i {
+pre a.i {
 	color: green;
 }
 
-pre .d {
+pre a.d {
 	color: red;
 }
 
-pre span a {
-	color: inherit;
-}
-
-pre span a:hover {
+pre a.i:hover, pre a.d:hover {
 	text-decoration: none;
 }

@@ -333,16 +333,16 @@ printshowfile(struct commitinfo *ci)
 				if (git_patch_get_line_in_hunk(&line, patch, j, k))
 					break;
 				if (line->old_lineno == -1)
-					fprintf(fp, "<span class=\"i\"><a href=\"#h%zu-%zu\" id=\"h%zu-%zu\">+",
+					fprintf(fp, "<a href=\"#h%zu-%zu\" id=\"h%zu-%zu\" class=\"i\">+",
 						j, k, j, k);
 				else if (line->new_lineno == -1)
-					fprintf(fp, "<span class=\"d\"><a href=\"#h%zu-%zu\" id=\"h%zu-%zu\">-",
+					fprintf(fp, "<a href=\"#h%zu-%zu\" id=\"h%zu-%zu\" class=\"d\">-",
 						j, k, j, k);
 				else
 					fputc(' ', fp);
 				xmlencode(fp, line->content, line->content_len);
 				if (line->old_lineno == -1 || line->new_lineno == -1)
-					fputs("</a></span>", fp);
+					fputs("</a>", fp);
 			}
 		}
 		git_patch_free(patch);
