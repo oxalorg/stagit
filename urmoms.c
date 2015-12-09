@@ -539,7 +539,7 @@ writefiles(FILE *fp)
 int
 main(int argc, char *argv[])
 {
-	git_object *obj = NULL;
+	git_object *obj_license = NULL, *obj_readme = NULL;
 	const git_error *e = NULL;
 	FILE *fp, *fpread;
 	char path[PATH_MAX], *p;
@@ -579,17 +579,17 @@ main(int argc, char *argv[])
 	}
 
 	/* check LICENSE */
-	haslicense = !git_revparse_single(&obj, repo, "HEAD:LICENSE");
+	haslicense = !git_revparse_single(&obj_license, repo, "HEAD:LICENSE");
 	/* check README */
-	hasreadme = !git_revparse_single(&obj, repo, "HEAD:README");
+	hasreadme = !git_revparse_single(&obj_readme, repo, "HEAD:README");
 
 	/* read LICENSE */
-	if (!git_revparse_single(&obj, repo, "HEAD:LICENSE")) {
+	if (haslicense) {
 		fp = efopen("license.html", "w+b");
 		writeheader(fp);
 		fputs("<pre>\n", fp);
-		writeblobhtml(fp, (git_blob *)obj);
-		git_object_free(obj);
+		writeblobhtml(fp, (git_blob *)obj_license);
+		git_object_free(obj_license);
 		if (ferror(fp))
 			err(1, "fwrite");
 		fputs("</pre>\n", fp);
@@ -599,12 +599,12 @@ main(int argc, char *argv[])
 	}
 
 	/* read README */
-	if (!git_revparse_single(&obj, repo, "HEAD:README")) {
+	if (hasreadme) {
 		fp = efopen("readme.html", "w+b");
 		writeheader(fp);
 		fputs("<pre>\n", fp);
-		writeblobhtml(fp, (git_blob *)obj);
-		git_object_free(obj);
+		writeblobhtml(fp, (git_blob *)obj_readme);
+		git_object_free(obj_readme);
 		if (ferror(fp))
 			err(1, "fwrite");
 		fputs("</pre>\n", fp);
