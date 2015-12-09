@@ -589,6 +589,7 @@ main(int argc, char *argv[])
 		writeheader(fp);
 		fputs("<pre>\n", fp);
 		writeblobhtml(fp, (git_blob *)obj);
+		git_object_free(obj);
 		if (ferror(fp))
 			err(1, "fwrite");
 		fputs("</pre>\n", fp);
@@ -603,6 +604,7 @@ main(int argc, char *argv[])
 		writeheader(fp);
 		fputs("<pre>\n", fp);
 		writeblobhtml(fp, (git_blob *)obj);
+		git_object_free(obj);
 		if (ferror(fp))
 			err(1, "fwrite");
 		fputs("</pre>\n", fp);
