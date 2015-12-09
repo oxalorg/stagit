@@ -1,6 +1,7 @@
 #include <sys/stat.h>
 
 #include <err.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <libgen.h>
 #include <limits.h>
@@ -123,9 +124,9 @@ writeheader(FILE *fp)
 	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
 	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>", relpath);
 	if (hasreadme)
-		fprintf(fp, " | <a href=\"%sreadme.html\">README</a>", relpath);
+		fprintf(fp, " | <a href=\"%sfile/README.html\">README</a>", relpath);
 	if (haslicense)
-		fprintf(fp, " | <a href=\"%slicense.html\">LICENSE</a>", relpath);
+		fprintf(fp, " | <a href=\"%sfile/LICENSE.html\">LICENSE</a>", relpath);
 	fputs("</td></tr></table>\n<hr/><div id=\"content\">\n", fp);
 
 	return 0;
@@ -185,6 +186,25 @@ xbasename(const char *path)
 	free(p);
 
 	return b;
+}
+
+int
+mkdirp(const char *path)
+{
+	char tmp[PATH_MAX], *p;
+
+	strlcpy(tmp, path, sizeof(tmp)); /* TODO: bring in libutil? */
+	for (p = tmp + (tmp[0] == '/'); *p; p++) {
+		if (*p != '/')
+			continue;
+		*p = '\0';
+		if (mkdir(tmp, S_IRWXU | S_IRWXG | S_IRWXO) < 0 && errno != EEXIST)
+			return -1;
+		*p = '/';
+	}
+	if (mkdir(tmp, S_IRWXU | S_IRWXG | S_IRWXO) < 0 && errno != EEXIST)
+		return -1;
+	return 0;
 }
 
 void
@@ -311,7 +331,7 @@ printshowfile(struct commitinfo *ci)
 		}
 
 		delta = git_patch_get_delta(patch);
-		fprintf(fp, "<b>diff --git a/<a href=\"%sfile/%s\">%s</a> b/<a href=\"%sfile/%s\">%s</a></b>\n",
+		fprintf(fp, "<b>diff --git a/<a href=\"%sfile/%s.html\">%s</a> b/<a href=\"%sfile/%s.html\">%s</a></b>\n",
 			relpath, delta->old_file.path, delta->old_file.path,
 			relpath, delta->new_file.path, delta->new_file.path);
 
@@ -509,6 +529,39 @@ writeatom(FILE *fp)
 }
 
 int
+writeblob(const char *path)
+{
+	char htmlpath[PATH_MAX];
+	char refpath[PATH_MAX];
+	char *relp;
+	git_object *obj = NULL;
+	FILE *fp;
+
+	snprintf(htmlpath, sizeof(htmlpath), "file/%s.html", path);
+	snprintf(refpath, sizeof(refpath), "HEAD:%s", path);
+
+	if (git_revparse_single(&obj, repo, refpath))
+		return 1; /* TODO: handle error */
+
+	mkdirp(dirname(htmlpath));
+
+	relpath = "../"; /* TODO: dynamic relpath based on number of /'s */
+
+	fp = efopen(htmlpath, "w+b");
+	writeheader(fp);
+	fputs("<pre>\n", fp);
+	writeblobhtml(fp, (git_blob *)obj);
+	if (ferror(fp))
+		err(1, "fwrite");
+	git_object_free(obj);
+	fputs("</pre>\n", fp);
+	writefooter(fp);
+	fclose(fp);
+	relpath = "";
+	return 0;
+}
+
+int
 writefiles(FILE *fp)
 {
 	const git_index_entry *entry;
@@ -524,15 +577,18 @@ writefiles(FILE *fp)
 
 	for (i = 0; i < count; i++) {
 		entry = git_index_get_byindex(index, i);
+
 		fputs("<tr><td>", fp);
 		fprintf(fp, "%u", entry->mode); /* TODO: fancy print, like: "-rw-r--r--" */
 		fprintf(fp, "</td><td><a href=\"%sfile/", relpath);
 		xmlencode(fp, entry->path, strlen(entry->path));
-		fputs("\">", fp);
+		fputs(".html\">", fp);
 		xmlencode(fp, entry->path, strlen(entry->path));
 		fputs("</a></td><td>", fp);
 		fprintf(fp, "%" PRIu64, entry->file_size);
 		fputs("</td></tr>\n", fp);
+
+		writeblob(entry->path);
 	}
 
 	fputs("</tbody></table>", fp);
@@ -543,7 +599,7 @@ writefiles(FILE *fp)
 int
 main(int argc, char *argv[])
 {
-	git_object *obj_license = NULL, *obj_readme = NULL;
+	git_object *obj = NULL;
 	const git_error *e = NULL;
 	FILE *fp, *fpread;
 	char path[PATH_MAX], *p;
@@ -584,38 +640,11 @@ main(int argc, char *argv[])
 	}
 
 	/* check LICENSE */
-	haslicense = !git_revparse_single(&obj_license, repo, "HEAD:LICENSE");
+	haslicense = !git_revparse_single(&obj, repo, "HEAD:LICENSE");
+	git_object_free(obj);
 	/* check README */
-	hasreadme = !git_revparse_single(&obj_readme, repo, "HEAD:README");
-
-	/* read LICENSE */
-	if (haslicense) {
-		fp = efopen("license.html", "w+b");
-		writeheader(fp);
-		fputs("<pre>\n", fp);
-		writeblobhtml(fp, (git_blob *)obj_license);
-		git_object_free(obj_license);
-		if (ferror(fp))
-			err(1, "fwrite");
-		fputs("</pre>\n", fp);
-		writefooter(fp);
-
-		fclose(fp);
-	}
-
-	/* read README */
-	if (hasreadme) {
-		fp = efopen("readme.html", "w+b");
-		writeheader(fp);
-		fputs("<pre>\n", fp);
-		writeblobhtml(fp, (git_blob *)obj_readme);
-		git_object_free(obj_readme);
-		if (ferror(fp))
-			err(1, "fwrite");
-		fputs("</pre>\n", fp);
-		writefooter(fp);
-		fclose(fp);
-	}
+	hasreadme = !git_revparse_single(&obj, repo, "HEAD:README");
+	git_object_free(obj);
 
 	fp = efopen("log.html", "w+b");
 	writeheader(fp);
