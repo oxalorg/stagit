@@ -5,11 +5,20 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
+	font-size: 1em;
 	margin: 0;
 }
 
 img, h1, h2 {
 	vertical-align: middle;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
 }
 
 table thead td {
@@ -24,39 +33,35 @@ table td {
 	background-color: #eee;
 }
 
-h1, h2, h3, h4, h5, h6 {
-	font-size: 1em;
-}
-
 .desc {
-	font-size: 100%;
 	color: #777;
 }
 
 hr {
-	color: #777;
-	background-color: #777;
 	border: 0;
-	border-top: 1px solid #777;
+	border-top: 1px dashed #777;
 }
 
 pre {
 	font-family: monospace;
 }
 
-pre span.h {
-	color: blue;
+pre .h {
+	color: darkcyan;
 }
 
-pre span.i {
+pre .i {
 	color: green;
 }
 
-pre span.d {
+pre .d {
 	color: red;
 }
 
 pre span a {
-	text-decoration: none;
 	color: inherit;
+}
+
+pre span a:hover {
+	text-decoration: none;
 }
