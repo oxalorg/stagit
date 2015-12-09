@@ -533,7 +533,6 @@ writeblob(const char *path)
 {
 	char htmlpath[PATH_MAX];
 	char refpath[PATH_MAX];
-	char *relp;
 	git_object *obj = NULL;
 	FILE *fp;
 
@@ -557,7 +556,9 @@ writeblob(const char *path)
 	fputs("</pre>\n", fp);
 	writefooter(fp);
 	fclose(fp);
+
 	relpath = "";
+
 	return 0;
 }
 
