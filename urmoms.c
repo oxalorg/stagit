@@ -529,31 +529,37 @@ writeatom(FILE *fp)
 }
 
 int
-writeblob(const char *path)
+writeblob(git_index_entry *entry)
 {
-	char htmlpath[PATH_MAX];
-	char refpath[PATH_MAX];
+	char fpath[PATH_MAX];
+	char ref[PATH_MAX];
 	git_object *obj = NULL;
 	FILE *fp;
 
-	snprintf(htmlpath, sizeof(htmlpath), "file/%s.html", path);
-	snprintf(refpath, sizeof(refpath), "HEAD:%s", path);
+	snprintf(fpath, sizeof(fpath), "file/%s.html", entry->path);
+	snprintf(ref, sizeof(ref), "HEAD:%s", entry->path);
 
-	if (git_revparse_single(&obj, repo, refpath))
-		return 1; /* TODO: handle error */
+	if (git_revparse_single(&obj, repo, ref))
+		return 1;
 
-	mkdirp(dirname(htmlpath));
+	if (mkdirp(dirname(fpath)))
+		return 1;
 
 	relpath = "../"; /* TODO: dynamic relpath based on number of /'s */
 
-	fp = efopen(htmlpath, "w+b");
+	fp = efopen(fpath, "w+b");
 	writeheader(fp);
-	fputs("<pre>\n", fp);
-	writeblobhtml(fp, (git_blob *)obj);
-	if (ferror(fp))
-		err(1, "fwrite");
+	fprintf(fp, "<p>%s (%" PRIu64 "b)</p><hr/>", entry->path, entry->file_size);
+	if (git_blob_is_binary((git_blob *)obj)) {
+		fprintf(fp, "<p>Binary file</p>\n");
+	} else {
+		fputs("<pre>\n", fp);
+		writeblobhtml(fp, (git_blob *)obj);
+		if (ferror(fp))
+			err(1, "fwrite");
+		fputs("</pre>\n", fp);
+	}
 	git_object_free(obj);
-	fputs("</pre>\n", fp);
 	writefooter(fp);
 	fclose(fp);
 
@@ -589,7 +595,7 @@ writefiles(FILE *fp)
 		fprintf(fp, "%" PRIu64, entry->file_size);
 		fputs("</td></tr>\n", fp);
 
-		writeblob(entry->path);
+		writeblob(entry);
 	}
 
 	fputs("</tbody></table>", fp);
