@@ -413,8 +413,9 @@ writelog(FILE *fp)
 	git_revwalk_simplify_first_parent(w);
 
 	/* TODO: also make "expanded" log ? (with message body) */
-	fputs("<table id=\"log\"><thead>\n<tr><td>Age</td><td>Commit message</td><td>Author</td>"
-	      "<td>Files</td><td>+</td><td>-</td></tr>\n</thead><tbody>\n", fp);
+	fputs("<table id=\"log\"><thead>\n<tr><td>Age</td><td>Commit message</td>"
+		  "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
+		  "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
 	while (!git_revwalk_next(&id, w)) {
 		relpath = "";
 
@@ -438,11 +439,11 @@ writelog(FILE *fp)
 		fputs("</td><td>", fp);
 		if (ci->author)
 			xmlencode(fp, ci->author->name, strlen(ci->author->name));
-		fputs("</td><td>", fp);
+		fputs("</td><td class=\"num\">", fp);
 		fprintf(fp, "%zu", ci->filecount);
-		fputs("</td><td>", fp);
+		fputs("</td><td class=\"num\">", fp);
 		fprintf(fp, "+%zu", ci->addcount);
-		fputs("</td><td>", fp);
+		fputs("</td><td class=\"num\">", fp);
 		fprintf(fp, "-%zu", ci->delcount);
 		fputs("</td></tr>\n", fp);
 
@@ -610,7 +611,7 @@ writefiles(FILE *fp)
 		xmlencode(fp, entry->path, strlen(entry->path));
 		fputs(".html\">", fp);
 		xmlencode(fp, entry->path, strlen(entry->path));
-		fputs("</a></td><td>", fp);
+		fputs("</a></td><td class=\"num\">", fp);
 		fprintf(fp, "%" PRIu64, entry->file_size);
 		fputs("</td></tr>\n", fp);
 
