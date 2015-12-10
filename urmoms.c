@@ -241,7 +241,28 @@ printtimeshort(FILE *fp, const git_time *intime)
 void
 writeblobhtml(FILE *fp, const git_blob *blob)
 {
-	xmlencode(fp, git_blob_rawcontent(blob), (size_t)git_blob_rawsize(blob));
+	off_t i = 0;
+	size_t n = 1;
+	char *nfmt = "<a href=\"#l%d\" id=\"l%d\">%d</a>\n";
+	const char *s = git_blob_rawcontent(blob);
+	git_off_t len = git_blob_rawsize(blob);
+
+	fputs("<table id=\"blob\"><tr><td class=\"num\"><pre>\n", fp);
+
+	if (len) {
+		fprintf(fp, nfmt, n, n, n);
+		while (i < len - 1) {
+			if (s[i] == '\n') {
+				n++;
+				fprintf(fp, nfmt, n, n, n);
+			}
+			i++;
+		}
+	}
+
+	fputs("</pre></td><td><pre>\n", fp);
+	xmlencode(fp, s, (size_t)len);
+	fputs("</pre></td></tr></table>\n", fp);
 }
 
 void
@@ -392,7 +413,7 @@ writelog(FILE *fp)
 	git_revwalk_simplify_first_parent(w);
 
 	/* TODO: also make "expanded" log ? (with message body) */
-	fputs("<table><thead>\n<tr><td>Age</td><td>Commit message</td><td>Author</td>"
+	fputs("<table id=\"log\"><thead>\n<tr><td>Age</td><td>Commit message</td><td>Author</td>"
 	      "<td>Files</td><td>+</td><td>-</td></tr>\n</thead><tbody>\n", fp);
 	while (!git_revwalk_next(&id, w)) {
 		relpath = "";
@@ -553,11 +574,9 @@ writeblob(const git_index_entry *entry)
 	if (git_blob_is_binary((git_blob *)obj)) {
 		fprintf(fp, "<p>Binary file</p>\n");
 	} else {
-		fputs("<pre>\n", fp);
 		writeblobhtml(fp, (git_blob *)obj);
 		if (ferror(fp))
 			err(1, "fwrite");
-		fputs("</pre>\n", fp);
 	}
 	git_object_free(obj);
 	writefooter(fp);
@@ -575,7 +594,7 @@ writefiles(FILE *fp)
 	git_index *index;
 	size_t count, i;
 
-	fputs("<table><thead>\n"
+	fputs("<table id=\"files\"><thead>\n"
 	      "<tr><td>Mode</td><td>Name</td><td>Size</td></tr>\n"
 	      "</thead><tbody>\n", fp);
 

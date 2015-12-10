@@ -21,6 +21,15 @@ a:hover {
 	text-decoration: underline;
 }
 
+#blob a {
+	color: #777;
+}
+
+#blob a:hover {
+	color: blue;
+	text-decoration: none;
+}
+
 table thead td {
 	font-weight: bold;
 }
@@ -29,8 +38,12 @@ table td {
 	padding: 0 0.4em;
 }
 
-#content table tr:hover td {
+#log tr:hover td, #files tr:hover td {
 	background-color: #eee;
+}
+
+td.num {
+	text-align: right;
 }
 
 .desc {
