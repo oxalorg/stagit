@@ -529,7 +529,7 @@ writeatom(FILE *fp)
 }
 
 int
-writeblob(git_index_entry *entry)
+writeblob(const git_index_entry *entry)
 {
 	char fpath[PATH_MAX];
 	char ref[PATH_MAX];
