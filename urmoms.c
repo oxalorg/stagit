@@ -555,6 +555,8 @@ writeblob(const git_index_entry *entry)
 {
 	char fpath[PATH_MAX];
 	char ref[PATH_MAX];
+	char tmp[PATH_MAX] = "";
+	char *p;
 	git_object *obj = NULL;
 	FILE *fp;
 
@@ -567,7 +569,13 @@ writeblob(const git_index_entry *entry)
 	if (mkdirp(dirname(fpath)))
 		return 1;
 
-	relpath = "../"; /* TODO: dynamic relpath based on number of /'s */
+	p = fpath;
+	while (*p) {
+		if (*p == '/')
+			strlcat(tmp, "../", sizeof(tmp));
+		p++;
+	}
+	relpath = tmp;
 
 	fp = efopen(fpath, "w+b");
 	writeheader(fp);
