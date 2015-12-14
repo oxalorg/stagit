@@ -33,7 +33,11 @@ dist: $(BIN)
 	(cd release/${VERSION}; \
 	tar -czf ../../urmoms-${VERSION}.tar.gz .)
 
-${OBJ}: config.mk ${HDR}
+${OBJ}: config.h config.mk ${HDR}
+
+config.h:
+	@echo creating $@ from config.def.h
+	@cp config.def.h $@
 
 urmoms: urmoms.o
 	${CC} -o $@ urmoms.o ${LDFLAGS}

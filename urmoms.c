@@ -10,6 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "config.h"
 #include "git2.h"
 
 struct commitinfo {
@@ -428,9 +429,9 @@ writelog(FILE *fp)
 		fputs("</td><td>", fp);
 		if (ci->summary) {
 			fprintf(fp, "<a href=\"%scommit/%s.html\">", relpath, ci->oid);
-			if ((len = strlen(ci->summary)) > 79) {
-				xmlencode(fp, ci->summary, 76);
-				fputs("...", fp);
+			if ((len = strlen(ci->summary)) > summarylen) {
+				xmlencode(fp, ci->summary, summarylen - 1);
+				fputs("…", fp);
 			} else {
 				xmlencode(fp, ci->summary, len);
 			}
