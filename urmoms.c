@@ -580,7 +580,7 @@ writeblob(const git_index_entry *entry)
 
 	fp = efopen(fpath, "w+b");
 	writeheader(fp);
-	fprintf(fp, "<p>%s (%" PRIu64 "b)</p><hr/>", entry->path, entry->file_size);
+	fprintf(fp, "<p>%s (%" PRIu32 "b)</p><hr/>", entry->path, entry->file_size);
 	if (git_blob_is_binary((git_blob *)obj)) {
 		fprintf(fp, "<p>Binary file</p>\n");
 	} else {
@@ -621,7 +621,7 @@ writefiles(FILE *fp)
 		fputs(".html\">", fp);
 		xmlencode(fp, entry->path, strlen(entry->path));
 		fputs("</a></td><td class=\"num\">", fp);
-		fprintf(fp, "%" PRIu64, entry->file_size);
+		fprintf(fp, "%" PRIu32, entry->file_size);
 		fputs("</td></tr>\n", fp);
 
 		writeblob(entry);
