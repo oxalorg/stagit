@@ -52,6 +52,8 @@ commitinfo_free(struct commitinfo *ci)
 
 	git_diff_stats_free(ci->stats);
 	git_diff_free(ci->diff);
+	git_tree_free(ci->commit_tree);
+	git_tree_free(ci->parent_tree);
 	git_commit_free(ci->commit);
 }
 
