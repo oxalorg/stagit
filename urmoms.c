@@ -61,6 +61,7 @@ struct commitinfo *
 commitinfo_getbyoid(const git_oid *id)
 {
 	struct commitinfo *ci;
+	git_diff_options opts;
 	int error;
 
 	if (!(ci = calloc(1, sizeof(struct commitinfo))))
@@ -88,7 +89,9 @@ commitinfo_getbyoid(const git_oid *id)
 		ci->parent_tree = NULL;
 	}
 
-	if ((error = git_diff_tree_to_tree(&(ci->diff), repo, ci->parent_tree, ci->commit_tree, NULL)))
+	git_diff_init_options(&opts, GIT_DIFF_OPTIONS_VERSION);
+	opts.flags |= GIT_DIFF_DISABLE_PATHSPEC_MATCH;
+	if ((error = git_diff_tree_to_tree(&(ci->diff), repo, ci->parent_tree, ci->commit_tree, &opts)))
 		goto err;
 	if (git_diff_get_stats(&(ci->stats), ci->diff))
 		goto err;
