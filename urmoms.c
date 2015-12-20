@@ -111,39 +111,6 @@ err:
 	return NULL;
 }
 
-int
-writeheader(FILE *fp)
-{
-	fputs("<!DOCTYPE HTML>"
-		"<html dir=\"ltr\" lang=\"en\">\n<head>\n"
-		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n"
-		"<meta http-equiv=\"Content-Language\" content=\"en\" />\n", fp);
-	fprintf(fp, "<title>%s%s%s</title>\n", name, description[0] ? " - " : "", description);
-	fprintf(fp, "<link rel=\"icon\" type=\"image/png\" href=\"%sfavicon.png\" />\n", relpath);
-	fprintf(fp, "<link rel=\"alternate\" type=\"application/atom+xml\" title=\"%s Atom Feed\" href=\"%satom.xml\" />\n",
-		name, relpath);
-	fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"%sstyle.css\" />\n", relpath);
-	fputs("</head>\n<body>\n\n", fp);
-	fprintf(fp, "<table><tr><td><img src=\"%slogo.png\" alt=\"\" width=\"32\" height=\"32\" /></td>"
-	        "<td><h1>%s</h1><span class=\"desc\">%s</span></td></tr><tr><td></td><td>\n",
-		relpath, name, description);
-	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
-	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>", relpath);
-	if (hasreadme)
-		fprintf(fp, " | <a href=\"%sfile/README.html\">README</a>", relpath);
-	if (haslicense)
-		fprintf(fp, " | <a href=\"%sfile/LICENSE.html\">LICENSE</a>", relpath);
-	fputs("</td></tr></table>\n<hr/><div id=\"content\">\n", fp);
-
-	return 0;
-}
-
-int
-writefooter(FILE *fp)
-{
-	return !fputs("</div></body>\n</html>", fp);
-}
-
 FILE *
 efopen(const char *name, const char *flags)
 {
@@ -242,6 +209,46 @@ void
 printtimeshort(FILE *fp, const git_time *intime)
 {
 	printtimeformat(fp, intime, "%Y-%m-%d %H:%M");
+}
+
+int
+writeheader(FILE *fp)
+{
+	fputs("<!DOCTYPE HTML>"
+		"<html dir=\"ltr\" lang=\"en\">\n<head>\n"
+		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n"
+		"<meta http-equiv=\"Content-Language\" content=\"en\" />\n<title>", fp);
+	xmlencode(fp, name, strlen(name));
+	if (description[0])
+		fputs(" - ", fp);
+	xmlencode(fp, description, strlen(description));
+	fprintf(fp, "</title>\n<link rel=\"icon\" type=\"image/png\" href=\"%sfavicon.png\" />\n", relpath);
+	fprintf(fp, "<link rel=\"alternate\" type=\"application/atom+xml\" title=\"%s Atom Feed\" href=\"%satom.xml\" />\n",
+		name, relpath);
+	fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"%sstyle.css\" />\n", relpath);
+	fputs("</head>\n<body>\n\n<table><tr><td>", fp);
+	fprintf(fp, "<a href=\"../%s\"><img src=\"%slogo.png\" alt=\"\" width=\"32\" height=\"32\" /></a>",
+	        relpath, relpath);
+	fputs("</td><td><h1>", fp);
+	xmlencode(fp, name, strlen(name));
+	fputs("</h1><span class=\"desc\">", fp);
+	xmlencode(fp, description, strlen(description));
+	fputs("</span></td></tr><tr><td></td><td>\n", fp);
+	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
+	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>", relpath);
+	if (hasreadme)
+		fprintf(fp, " | <a href=\"%sfile/README.html\">README</a>", relpath);
+	if (haslicense)
+		fprintf(fp, " | <a href=\"%sfile/LICENSE.html\">LICENSE</a>", relpath);
+	fputs("</td></tr></table>\n<hr/><div id=\"content\">\n", fp);
+
+	return 0;
+}
+
+int
+writefooter(FILE *fp)
+{
+	return !fputs("</div></body>\n</html>", fp);
 }
 
 void
