@@ -409,14 +409,13 @@ printshowfile(struct commitinfo *ci)
 	return;
 }
 
-int
+void
 writelog(FILE *fp)
 {
 	struct commitinfo *ci;
 	git_revwalk *w = NULL;
 	git_oid id;
 	size_t len;
-	int ret = 0;
 
 	mkdir("commit", 0755);
 
@@ -469,8 +468,6 @@ writelog(FILE *fp)
 
 	git_revwalk_free(w);
 	relpath = "";
-
-	return ret;
 }
 
 void
