@@ -7,6 +7,19 @@ cd htmldir
 urmoms <path-to-repo>
 
 
+Install
+-------
+$ make
+# doas make install
+
+
+Dependencies
+------------
+- libgit2
+- C compiler
+- make
+
+
 Features
 --------
 
