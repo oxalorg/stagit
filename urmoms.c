@@ -337,7 +337,7 @@ printshowfile(struct commitinfo *ci)
 	if (!access(path, F_OK))
 		return;
 
-	fp = efopen(path, "w+b");
+	fp = efopen(path, "w");
 	writeheader(fp);
 	fputs("<pre>\n", fp);
 	printcommit(fp, ci);
@@ -590,7 +590,7 @@ writeblob(const git_index_entry *entry)
 	}
 	relpath = tmp;
 
-	fp = efopen(fpath, "w+b");
+	fp = efopen(fpath, "w");
 	writeheader(fp);
 	fprintf(fp, "<p>%s (%" PRIu32 "b)</p><hr/>", entry->path, entry->file_size);
 	if (git_blob_is_binary((git_blob *)obj)) {
@@ -676,10 +676,10 @@ main(int argc, char *argv[])
 	/* read description or .git/description */
 	snprintf(path, sizeof(path), "%s%s%s",
 		repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "description");
-	if (!(fpread = fopen(path, "r+b"))) {
+	if (!(fpread = fopen(path, "r"))) {
 		snprintf(path, sizeof(path), "%s%s%s",
 			repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/description");
-		fpread = fopen(path, "r+b");
+		fpread = fopen(path, "r");
 	}
 	if (fpread) {
 		if (!fgets(description, sizeof(description), fpread))
@@ -694,20 +694,20 @@ main(int argc, char *argv[])
 	hasreadme = !git_revparse_single(&obj, repo, "HEAD:README");
 	git_object_free(obj);
 
-	fp = efopen("log.html", "w+b");
+	fp = efopen("log.html", "w");
 	writeheader(fp);
 	writelog(fp);
 	writefooter(fp);
 	fclose(fp);
 
-	fp = efopen("files.html", "w+b");
+	fp = efopen("files.html", "w");
 	writeheader(fp);
 	writefiles(fp);
 	writefooter(fp);
 	fclose(fp);
 
 	/* Atom feed */
-	fp = efopen("atom.xml", "w+b");
+	fp = efopen("atom.xml", "w");
 	writeatom(fp);
 	fclose(fp);
 
