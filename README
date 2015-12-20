@@ -4,7 +4,7 @@ Usage
 
 mkdir -p htmldir
 cd htmldir
-urmoms <path-to-repo>
+urmoms path-to-repo
 
 
 Install
@@ -27,3 +27,4 @@ Features
 - Show file tree.
 - Detect README and LICENSE file to make a webpage.
 - Atom feed git log.
+- Make index page for multiple repositories.
