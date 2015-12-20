@@ -19,5 +19,8 @@ features:
 ? show all the tags and branches as list.
 ? show commits for more tags and branches?
 
+documentation:
+- write mandoc pages.
+
 idea:
 - program to write index for multiple repos: urmoms-index <repodir>...
