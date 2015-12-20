@@ -3,11 +3,14 @@ include config.mk
 NAME = urmoms
 VERSION = 0.1
 SRC = \
-	urmoms.c
+	urmoms.c\
+	urmoms-index.c
 BIN = \
-	urmoms
+	urmoms\
+	urmoms-index
 MAN1 = \
-	urmoms.1
+	urmoms.1\
+	urmoms-index.1
 DOC = \
 	LICENSE\
 	README\
@@ -41,6 +44,9 @@ config.h:
 
 urmoms: urmoms.o
 	${CC} -o $@ urmoms.o ${LDFLAGS}
+
+urmoms-index: urmoms-index.o
+	${CC} -o $@ urmoms-index.o ${LDFLAGS}
 
 clean:
 	rm -f ${BIN} ${OBJ}
