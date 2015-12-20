@@ -13,28 +13,6 @@
 #include "config.h"
 #include "git2.h"
 
-struct commitinfo {
-	const git_oid *id;
-
-	char oid[GIT_OID_HEXSZ + 1];
-	char parentoid[GIT_OID_HEXSZ + 1];
-
-	const git_signature *author;
-	const char *summary;
-	const char *msg;
-
-	git_diff_stats *stats;
-	git_diff       *diff;
-	git_commit     *commit;
-	git_commit     *parent;
-	git_tree       *commit_tree;
-	git_tree       *parent_tree;
-
-	size_t addcount;
-	size_t delcount;
-	size_t filecount;
-};
-
 static git_repository *repo;
 
 static const char *relpath = "";
@@ -43,73 +21,6 @@ static const char *repodir;
 static char description[255] = "Repositories";
 static char name[255];
 static char owner[255];
-
-void
-commitinfo_free(struct commitinfo *ci)
-{
-	if (!ci)
-		return;
-
-	git_diff_stats_free(ci->stats);
-	git_diff_free(ci->diff);
-	git_tree_free(ci->commit_tree);
-	git_tree_free(ci->parent_tree);
-	git_commit_free(ci->commit);
-}
-
-struct commitinfo *
-commitinfo_getbyoid(const git_oid *id)
-{
-	struct commitinfo *ci;
-	git_diff_options opts;
-	int error;
-
-	if (!(ci = calloc(1, sizeof(struct commitinfo))))
-		err(1, "calloc");
-
-	ci->id = id;
-	if (git_commit_lookup(&(ci->commit), repo, id))
-		goto err;
-
-	/* TODO: show tags when commit has it */
-	git_oid_tostr(ci->oid, sizeof(ci->oid), git_commit_id(ci->commit));
-	git_oid_tostr(ci->parentoid, sizeof(ci->parentoid), git_commit_parent_id(ci->commit, 0));
-
-	ci->author = git_commit_author(ci->commit);
-	ci->summary = git_commit_summary(ci->commit);
-	ci->msg = git_commit_message(ci->commit);
-
-	if ((error = git_commit_tree(&(ci->commit_tree), ci->commit)))
-		goto err; /* TODO: handle error */
-	if (!(error = git_commit_parent(&(ci->parent), ci->commit, 0))) {
-		if ((error = git_commit_tree(&(ci->parent_tree), ci->parent)))
-			goto err;
-	} else {
-		ci->parent = NULL;
-		ci->parent_tree = NULL;
-	}
-
-	git_diff_init_options(&opts, GIT_DIFF_OPTIONS_VERSION);
-	opts.flags |= GIT_DIFF_DISABLE_PATHSPEC_MATCH;
-	if ((error = git_diff_tree_to_tree(&(ci->diff), repo, ci->parent_tree, ci->commit_tree, &opts)))
-		goto err;
-	if (git_diff_get_stats(&(ci->stats), ci->diff))
-		goto err;
-
-	ci->addcount = git_diff_stats_insertions(ci->stats);
-	ci->delcount = git_diff_stats_deletions(ci->stats);
-	ci->filecount = git_diff_stats_files_changed(ci->stats);
-
-	/* TODO: show tag when commit has it */
-
-	return ci;
-
-err:
-	commitinfo_free(ci);
-	free(ci);
-
-	return NULL;
-}
 
 FILE *
 efopen(const char *name, const char *flags)
@@ -211,7 +122,8 @@ writefooter(FILE *fp)
 int
 writelog(FILE *fp)
 {
-	struct commitinfo *ci;
+	git_commit *commit = NULL;
+	const git_signature *author;
 	git_revwalk *w = NULL;
 	git_oid id;
 	int ret = 0;
@@ -222,10 +134,12 @@ writelog(FILE *fp)
 	git_revwalk_simplify_first_parent(w);
 
 	if (git_revwalk_next(&id, w) ||
-	    !(ci = commitinfo_getbyoid(&id))) {
+	    git_commit_lookup(&commit, repo, &id)) {
 		ret = -1;
 		goto err;
 	}
+
+	author = git_commit_author(commit);
 
 	fputs("<tr><td><a href=\"", fp);
 	xmlencode(fp, name, strlen(name));
@@ -236,10 +150,11 @@ writelog(FILE *fp)
 	fputs("</td><td>", fp);
 	xmlencode(fp, owner, strlen(owner));
 	fputs("</td><td>", fp);
-	if (ci->author)
-		printtimeshort(fp, &(ci->author->when));
+	if (author)
+		printtimeshort(fp, &(author->when));
 	fputs("</td></tr>", fp);
 
+	git_commit_free(commit);
 err:
 	git_revwalk_free(w);
 
@@ -252,8 +167,7 @@ main(int argc, char *argv[])
 	const git_error *e = NULL;
 	FILE *fp;
 	char path[PATH_MAX], *p;
-	int status;
-	size_t i;
+	int i, status;
 
 	if (argc < 2) {
 		fprintf(stderr, "%s [repodir...]\n", argv[0]);
