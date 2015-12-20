@@ -561,21 +561,14 @@ writeatom(FILE *fp)
 }
 
 int
-writeblob(const git_index_entry *entry)
+writeblob(git_object *obj, const char *filename, git_off_t filesize)
 {
 	char fpath[PATH_MAX];
-	char ref[PATH_MAX];
 	char tmp[PATH_MAX] = "";
 	char *p;
-	git_object *obj = NULL;
 	FILE *fp;
 
-	snprintf(fpath, sizeof(fpath), "file/%s.html", entry->path);
-	snprintf(ref, sizeof(ref), "HEAD:%s", entry->path);
-
-	if (git_revparse_single(&obj, repo, ref))
-		return 1;
-
+	snprintf(fpath, sizeof(fpath), "file/%s.html", filename);
 	if (mkdirp(dirname(fpath)))
 		return 1;
 
@@ -589,7 +582,11 @@ writeblob(const git_index_entry *entry)
 
 	fp = efopen(fpath, "w");
 	writeheader(fp);
-	fprintf(fp, "<p>%s (%" PRIu32 "b)</p><hr/>", entry->path, entry->file_size);
+	fputs("<p> ", fp);
+	xmlencode(fp, filename, strlen(filename));
+	fprintf(fp, " (%" PRIu32 "b)", filesize);
+	fputs("</p><hr/>", fp);
+
 	if (git_blob_is_binary((git_blob *)obj)) {
 		fprintf(fp, "<p>Binary file</p>\n");
 	} else {
@@ -597,7 +594,6 @@ writeblob(const git_index_entry *entry)
 		if (ferror(fp))
 			err(1, "fwrite");
 	}
-	git_object_free(obj);
 	writefooter(fp);
 	fclose(fp);
 
@@ -607,34 +603,88 @@ writeblob(const git_index_entry *entry)
 }
 
 int
+writefilestree(FILE *fp, git_tree *tree, const char *path)
+{
+	const git_tree_entry *entry = NULL;
+	const char *filename;
+	char filepath[PATH_MAX];
+	git_object *obj = NULL;
+	git_off_t filesize;
+	size_t count, i;
+	int ret;
+
+	count = git_tree_entrycount(tree);
+	for (i = 0; i < count; i++) {
+		if (!(entry = git_tree_entry_byindex(tree, i)))
+			return -1;
+
+		filename = git_tree_entry_name(entry);
+		if (git_tree_entry_to_object(&obj, repo, entry))
+			return -1;
+		switch (git_object_type(obj)) {
+		case GIT_OBJ_BLOB:
+			break;
+		case GIT_OBJ_TREE:
+			ret = writefilestree(fp, (git_tree *)obj, filename);
+			git_object_free(obj);
+			if (ret)
+				return ret;
+			continue;
+		default:
+			git_object_free(obj);
+			continue;
+		}
+		if (path[0]) {
+			snprintf(filepath, sizeof(filepath), "%s/%s", path, filename);
+			filename = filepath;
+		}
+
+		filesize = git_blob_rawsize((git_blob *)obj);
+
+		fputs("<tr><td>", fp);
+		/* TODO: fancy print, like: "-rw-r--r--" */
+		fprintf(fp, "%u", git_tree_entry_filemode_raw(entry));
+		fprintf(fp, "</td><td><a href=\"%sfile/", relpath);
+		xmlencode(fp, filename, strlen(filename));
+		fputs(".html\">", fp);
+		xmlencode(fp, filename, strlen(filename));
+		fputs("</a></td><td class=\"num\">", fp);
+		fprintf(fp, "%" PRIu32, filesize);
+		fputs("</td></tr>\n", fp);
+
+		writeblob(obj, filename, filesize);
+	}
+
+	return 0;
+}
+
+int
 writefiles(FILE *fp)
 {
-	const git_index_entry *entry;
-	git_index *index;
-	size_t count, i;
+	const git_oid *id;
+	git_tree *tree = NULL;
+	git_object *obj = NULL;
+	git_commit *commit = NULL;
 
 	fputs("<table id=\"files\"><thead>\n"
 	      "<tr><td>Mode</td><td>Name</td><td>Size</td></tr>\n"
 	      "</thead><tbody>\n", fp);
 
-	git_repository_index(&index, repo);
-	count = git_index_entrycount(index);
-
-	for (i = 0; i < count; i++) {
-		entry = git_index_get_byindex(index, i);
-
-		fputs("<tr><td>", fp);
-		fprintf(fp, "%u", entry->mode); /* TODO: fancy print, like: "-rw-r--r--" */
-		fprintf(fp, "</td><td><a href=\"%sfile/", relpath);
-		xmlencode(fp, entry->path, strlen(entry->path));
-		fputs(".html\">", fp);
-		xmlencode(fp, entry->path, strlen(entry->path));
-		fputs("</a></td><td class=\"num\">", fp);
-		fprintf(fp, "%" PRIu32, entry->file_size);
-		fputs("</td></tr>\n", fp);
-
-		writeblob(entry);
+	if (git_revparse_single(&obj, repo, "HEAD"))
+		return -1;
+	id = git_object_id(obj);
+	if (git_commit_lookup(&commit, repo, id))
+		return -1;
+	if (git_commit_tree(&tree, commit)) {
+		git_commit_free(commit);
+		return -1;
 	}
+	git_commit_free(commit);
+
+	writefilestree(fp, tree, "");
+
+	git_commit_free(commit);
+	git_tree_free(tree);
 
 	fputs("</tbody></table>", fp);
 
