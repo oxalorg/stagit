@@ -10,8 +10,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <git2.h>
+
 #include "config.h"
-#include "git2.h"
 
 static git_repository *repo;
 
