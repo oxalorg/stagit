@@ -73,7 +73,6 @@ commitinfo_getbyoid(const git_oid *id)
 	if (git_commit_lookup(&(ci->commit), repo, id))
 		goto err;
 
-	/* TODO: show tags when commit has it */
 	git_oid_tostr(ci->oid, sizeof(ci->oid), git_commit_id(ci->commit));
 	git_oid_tostr(ci->parentoid, sizeof(ci->parentoid), git_commit_parent_id(ci->commit, 0));
 
@@ -82,7 +81,7 @@ commitinfo_getbyoid(const git_oid *id)
 	ci->msg = git_commit_message(ci->commit);
 
 	if ((error = git_commit_tree(&(ci->commit_tree), ci->commit)))
-		goto err; /* TODO: handle error */
+		goto err;
 	if (!(error = git_commit_parent(&(ci->parent), ci->commit, 0))) {
 		if ((error = git_commit_tree(&(ci->parent_tree), ci->parent)))
 			goto err;
@@ -101,8 +100,6 @@ commitinfo_getbyoid(const git_oid *id)
 	ci->addcount = git_diff_stats_insertions(ci->stats);
 	ci->delcount = git_diff_stats_deletions(ci->stats);
 	ci->filecount = git_diff_stats_files_changed(ci->stats);
-
-	/* TODO: show tag when commit has it */
 
 	return ci;
 
@@ -168,7 +165,7 @@ mkdirp(const char *path)
 {
 	char tmp[PATH_MAX], *p;
 
-	strlcpy(tmp, path, sizeof(tmp)); /* TODO: bring in libutil? */
+	strlcpy(tmp, path, sizeof(tmp));
 	for (p = tmp + (tmp[0] == '/'); *p; p++) {
 		if (*p != '/')
 			continue;
@@ -283,7 +280,6 @@ writeblobhtml(FILE *fp, const git_blob *blob)
 void
 printcommit(FILE *fp, struct commitinfo *ci)
 {
-	/* TODO: show tag when commit has it */
 	fprintf(fp, "<b>commit</b> <a href=\"%scommit/%s.html\">%s</a>\n",
 		relpath, ci->oid, ci->oid);
 
@@ -363,7 +359,7 @@ printshowfile(struct commitinfo *ci)
 	for (i = 0; i < ndeltas; i++) {
 		if (git_patch_from_diff(&patch, ci->diff, i)) {
 			git_patch_free(patch);
-			break; /* TODO: handle error */
+			break;
 		}
 
 		delta = git_patch_get_delta(patch);
@@ -381,7 +377,7 @@ printshowfile(struct commitinfo *ci)
 		nhunks = git_patch_num_hunks(patch);
 		for (j = 0; j < nhunks; j++) {
 			if (git_patch_get_hunk(&hunk, &nhunklines, patch, j))
-				break; /* TODO: handle error ? */
+				break;
 
 			fprintf(fp, "<span class=\"h\">%s</span>\n", hunk->header);
 
@@ -426,7 +422,6 @@ writelog(FILE *fp)
 	git_revwalk_sorting(w, GIT_SORT_TIME);
 	git_revwalk_simplify_first_parent(w);
 
-	/* TODO: also make "expanded" log ? (with message body) */
 	fputs("<table id=\"log\"><thead>\n<tr><td>Age</td><td>Commit message</td>"
 		  "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
 		  "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
@@ -644,7 +639,6 @@ writefilestree(FILE *fp, git_tree *tree, const char *path)
 		filesize = git_blob_rawsize((git_blob *)obj);
 
 		fputs("<tr><td>", fp);
-		/* TODO: fancy print, like: "-rw-r--r--" */
 		fprintf(fp, "%u", git_tree_entry_filemode_raw(entry));
 		fprintf(fp, "</td><td><a href=\"%sfile/", relpath);
 		xmlencode(fp, filename, strlen(filename));
