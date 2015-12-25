@@ -15,7 +15,7 @@ $ make
 
 Dependencies
 ------------
-- libgit2
+- libgit2 (v0.22+).
 - C compiler
 - make
 

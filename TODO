@@ -1,3 +1,9 @@
+marketing:
+- rename project: stagit?
+
+portability:
+- add strlcpy, strlcat.
+
 performance:
 - optimize git_diff_get_stats.
 - speed up generating files.
@@ -6,6 +12,7 @@ performance:
 
 display:
 - time format: YYYY-MM-DD HH:MM (always use UTC+00:00, but don't show timezone).
+- files page: show human-readable file modes: -rw-r--r--.
 
 layout:
 - make top menu look nicer in links/lynx again.
@@ -20,7 +27,7 @@ features:
 ? show commits for more tags and branches?
 
 documentation:
-- write mandoc pages.
+- improve mandoc pages.
 
 idea:
 - program to write index for multiple repos: urmoms-index <repodir>...
