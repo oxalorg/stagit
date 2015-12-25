@@ -12,6 +12,7 @@
 
 #include <git2.h>
 
+#include "compat.h"
 #include "config.h"
 
 struct commitinfo {

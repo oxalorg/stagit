@@ -5,6 +5,9 @@ VERSION = 0.1
 SRC = \
 	urmoms.c\
 	urmoms-index.c
+COMPATSRC = \
+	strlcat.c\
+	strlcpy.c
 BIN = \
 	urmoms\
 	urmoms-index
@@ -15,9 +18,9 @@ DOC = \
 	LICENSE\
 	README\
 	TODO
-HDR = 
+HDR = compat.h
 
-OBJ = ${SRC:.c=.o}
+OBJ = ${SRC:.c=.o} ${EXTRAOBJ}
 
 all: $(BIN)
 
@@ -42,10 +45,10 @@ config.h:
 	@echo creating $@ from config.def.h
 	@cp config.def.h $@
 
-urmoms: urmoms.o
+urmoms: urmoms.o ${EXTRAOBJ}
 	${CC} -o $@ urmoms.o ${LDFLAGS}
 
-urmoms-index: urmoms-index.o
+urmoms-index: urmoms-index.o ${EXTRAOBJ}
 	${CC} -o $@ urmoms-index.o ${LDFLAGS}
 
 clean:
