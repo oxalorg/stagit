@@ -561,8 +561,8 @@ writeatom(FILE *fp)
 	git_oid id;
 	size_t i, m = 100; /* max */
 
-	fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n", fp);
-	fputs("<feed xmlns=\"http://www.w3.org/2005/Atom\">\n<title>", fp);
+	fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+	      "<feed xmlns=\"http://www.w3.org/2005/Atom\">\n<title>", fp);
 	xmlencode(fp, name, strlen(name));
 	fputs(", branch master</title>\n<subtitle>", fp);
 
@@ -696,9 +696,9 @@ writefiles(FILE *fp)
 	git_object *obj = NULL;
 	git_commit *commit = NULL;
 
-	fputs("<table id=\"files\"><thead>\n"
-	      "<tr><td>Mode</td><td>Name</td><td>Size</td></tr>\n"
-	      "</thead><tbody>\n", fp);
+	fputs("<table id=\"files\"><thead>\n<tr>"
+	      "<td>Mode</td><td>Name</td><td class=\"num\">Size</td>"
+	      "</tr>\n</thead><tbody>\n", fp);
 
 	if (git_revparse_single(&obj, repo, "HEAD"))
 		return -1;
