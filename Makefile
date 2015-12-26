@@ -1,19 +1,19 @@
 include config.mk
 
-NAME = urmoms
+NAME = stagit
 VERSION = 0.1
 SRC = \
-	urmoms.c\
-	urmoms-index.c
+	stagit.c\
+	stagit-index.c
 COMPATSRC = \
 	strlcat.c\
 	strlcpy.c
 BIN = \
-	urmoms\
-	urmoms-index
+	stagit\
+	stagit-index
 MAN1 = \
-	urmoms.1\
-	urmoms-index.1
+	stagit.1\
+	stagit-index.1
 DOC = \
 	LICENSE\
 	README\
@@ -35,9 +35,9 @@ dist: $(BIN)
 		logo.png style.css \
 		release/${VERSION}/
 	# make tarball
-	rm -f urmoms-${VERSION}.tar.gz
+	rm -f stagit-${VERSION}.tar.gz
 	(cd release/${VERSION}; \
-	tar -czf ../../urmoms-${VERSION}.tar.gz .)
+	tar -czf ../../stagit-${VERSION}.tar.gz .)
 
 ${OBJ}: config.h config.mk ${HDR}
 
@@ -45,11 +45,11 @@ config.h:
 	@echo creating $@ from config.def.h
 	@cp config.def.h $@
 
-urmoms: urmoms.o ${COMPATOBJ}
-	${CC} -o $@ urmoms.o ${COMPATOBJ} ${LDFLAGS}
+stagit: stagit.o ${COMPATOBJ}
+	${CC} -o $@ stagit.o ${COMPATOBJ} ${LDFLAGS}
 
-urmoms-index: urmoms-index.o ${COMPATOBJ}
-	${CC} -o $@ urmoms-index.o ${COMPATOBJ} ${LDFLAGS}
+stagit-index: stagit-index.o ${COMPATOBJ}
+	${CC} -o $@ stagit-index.o ${COMPATOBJ} ${LDFLAGS}
 
 clean:
 	rm -f ${BIN} ${OBJ}

@@ -4,7 +4,7 @@ Usage
 
 mkdir -p htmldir
 cd htmldir
-urmoms path-to-repo
+stagit path-to-repo
 
 
 Install

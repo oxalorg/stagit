@@ -1,8 +1,8 @@
-.Dd December 20, 2015
-.Dt URMOMS-INDEX 1
+.Dd December 26, 2015
+.Dt STAGIT-INDEX 1
 .Os
 .Sh NAME
-.Nm urmoms-index
+.Nm stagit-index
 .Nd static git index page generator
 .Sh SYNOPSIS
 .Nm
@@ -11,6 +11,16 @@
 .Nm
 will create an index HTML page for the repositories specified and writes
 the HTML data to stdout.
+.Pp
+The basename of the directory is used as the name.
+.Pp
+The content of the follow files specifies the meta data for each repository:
+.Bl -tag -width Ds
+.It .git/description or description (bare repos).
+description
+.It .git/owner or owner (bare repo).
+owner of repository
+.El
 .Pp
 For changing the style of the page you can use the following files:
 .Bl -tag -width Ds
@@ -22,6 +32,6 @@ favicon image.
 CSS stylesheet.
 .El
 .Sh SEE ALSO
-.Xr urmoms 1
+.Xr stagit 1
 .Sh AUTHORS
 .An Hiltjo Posthuma Aq Mt hiltjo@codemadness.org

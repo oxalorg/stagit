@@ -1,8 +1,8 @@
-.Dd December 20, 2015
-.Dt URMOMS 1
+.Dd December 26, 2015
+.Dt STAGIT 1
 .Os
 .Sh NAME
-.Nm urmoms
+.Nm stagit
 .Nd static git page generator
 .Sh SYNOPSIS
 .Nm
@@ -32,6 +32,18 @@ commit/commitid.html . This file will contain the diff and diffstat of the
 commit. It will write the string "binary files differ" if the data is
 considered to be non-textual.
 .Pp
+The basename of the directory is used as the name.
+.Pp
+The content of the follow files specifies the meta data for each repository:
+.Bl -tag -width Ds
+.It .git/description or description (bare repos).
+description
+.It .git/owner or owner (bare repo).
+owner of repository
+.It .git/url or url (bare repo).
+primary clone url of the repository, for example: git://git.2f30.org/stagit
+.El
+.Pp
 For changing the style of the page you can use the following files:
 .Bl -tag -width Ds
 .It logo.png
@@ -42,6 +54,6 @@ favicon image.
 CSS stylesheet.
 .El
 .Sh SEE ALSO
-.Xr urmoms-index 1
+.Xr stagit-index 1
 .Sh AUTHORS
 .An Hiltjo Posthuma Aq Mt hiltjo@codemadness.org

@@ -1,17 +1,9 @@
-marketing:
-- rename project: stagit?
-
 performance:
 - optimize git_diff_get_stats.
 - speed up generating files.
-- be smarter about changes (an existing commit can never change the diff page).
 
 layout:
 - make top menu look nicer in links/lynx again.
 
 documentation:
 - improve mandoc pages.
-  - document .git/description, .git/owner and .git/url
-
-idea:
-- program to write index for multiple repos: urmoms-index <repodir>...

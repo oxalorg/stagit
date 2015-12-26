@@ -19,7 +19,7 @@ curdir=$(pwd)
 
 # make index.
 cd "${reposdir}"
-find . -maxdepth 1 -type d | grep -v "^.$" | sort | xargs urmoms-index > "${curdir}/index.html"
+find . -maxdepth 1 -type d | grep -v "^.$" | sort | xargs stagit-index > "${curdir}/index.html"
 
 # make files per repo.
 find . -maxdepth 1 -type d | grep -v "^.$" | sort | while read -r dir; do
@@ -31,7 +31,7 @@ find . -maxdepth 1 -type d | grep -v "^.$" | sort | while read -r dir; do
 	
 	test -d "${d}" || mkdir -p "${d}"
 	cd "${d}"
-	urmoms "${reposdir}${d}"
+	stagit "${reposdir}${d}"
 
 	printf " done\n"
 done
