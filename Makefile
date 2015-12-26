@@ -20,7 +20,7 @@ DOC = \
 	TODO
 HDR = compat.h
 
-OBJ = ${SRC:.c=.o} ${EXTRAOBJ}
+OBJ = ${SRC:.c=.o} ${COMPATOBJ}
 
 all: $(BIN)
 
@@ -45,11 +45,11 @@ config.h:
 	@echo creating $@ from config.def.h
 	@cp config.def.h $@
 
-urmoms: urmoms.o ${EXTRAOBJ}
-	${CC} -o $@ urmoms.o ${EXTRAOBJ} ${LDFLAGS}
+urmoms: urmoms.o ${COMPATOBJ}
+	${CC} -o $@ urmoms.o ${COMPATOBJ} ${LDFLAGS}
 
-urmoms-index: urmoms-index.o ${EXTRAOBJ}
-	${CC} -o $@ urmoms-index.o ${EXTRAOBJ} ${LDFLAGS}
+urmoms-index: urmoms-index.o ${COMPATOBJ}
+	${CC} -o $@ urmoms-index.o ${COMPATOBJ} ${LDFLAGS}
 
 clean:
 	rm -f ${BIN} ${OBJ}

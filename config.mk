@@ -29,7 +29,7 @@ LDFLAGS = ${LIBS}
 # uncomment for compat
 CFLAGS += -DCOMPAT
 # uncomment if your libc doesn't support strlcat, strlcpy.
-EXTRAOBJ = strlcat.o strlcpy.o
+COMPATOBJ = strlcat.o strlcpy.o
 
 # compiler and linker
 #CC = cc
