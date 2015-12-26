@@ -140,6 +140,27 @@ xmlencode(FILE *fp, const char *s, size_t len)
 	}
 }
 
+/* Some implementations of dirname(3) return a pointer to a static
+ * internal buffer (OpenBSD). Others modify the contents of `path` (POSIX).
+ * This is a wrapper function that is compatible with both versions.
+ * The program will error out if dirname(3) failed, this can only happen
+ * with the OpenBSD version. */
+char *
+xdirname(const char *path)
+{
+	char *p, *b;
+
+	if (!(p = strdup(path)))
+		err(1, "strdup");
+	if (!(b = dirname(p)))
+		err(1, "basename");
+	if (!(b = strdup(b)))
+		err(1, "strdup");
+	free(p);
+
+	return b;
+}
+
 /* Some implementations of basename(3) return a pointer to a static
  * internal buffer (OpenBSD). Others modify the contents of `path` (POSIX).
  * This is a wrapper function that is compatible with both versions.
@@ -571,12 +592,16 @@ writeblob(git_object *obj, const char *filename, git_off_t filesize)
 {
 	char fpath[PATH_MAX];
 	char tmp[PATH_MAX] = "";
-	char *p;
+	char *d, *p;
 	FILE *fp;
 
 	snprintf(fpath, sizeof(fpath), "file/%s.html", filename);
-	if (mkdirp(dirname(fpath)))
+	d = xdirname(fpath);
+	if (mkdirp(d)) {
+		free(d);
 		return 1;
+	}
+	free(d);
 
 	p = fpath;
 	while (*p) {
