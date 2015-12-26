@@ -1,33 +1,17 @@
 marketing:
 - rename project: stagit?
 
-portability:
-- add strlcpy, strlcat.
-
 performance:
 - optimize git_diff_get_stats.
 - speed up generating files.
 - be smarter about changes (an existing commit can never change the diff page).
-? add pagination to log.html for > 5000 entries?
-
-display:
-- time format: YYYY-MM-DD HH:MM (always use UTC+00:00, but don't show timezone).
-- files page: show human-readable file modes: -rw-r--r--.
 
 layout:
 - make top menu look nicer in links/lynx again.
 
-features:
-- add raw link to latest files: raw/file...
-- checkout files in separate directory.
-- format text files in repo with lines, make the link linkable with an "anchor".
-- able to add link to git url: git://url... per project.
-? add summary page?
-? show all the tags and branches as list.
-? show commits for more tags and branches?
-
 documentation:
 - improve mandoc pages.
+  - document .git/description, .git/owner and .git/url
 
 idea:
 - program to write index for multiple repos: urmoms-index <repodir>...
