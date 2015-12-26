@@ -633,6 +633,48 @@ writeblob(git_object *obj, const char *filename, git_off_t filesize)
 	return 0;
 }
 
+const char *
+filemode(git_filemode_t m)
+{
+	static char mode[11];
+
+	memset(mode, '-', sizeof(mode) - 1);
+	mode[10] = '\0';
+
+	if (S_ISREG(m))
+		mode[0] = '-';
+	else if (S_ISBLK(m))
+		mode[0] = 'b';
+	else if (S_ISCHR(m))
+		mode[0] = 'c';
+	else if (S_ISDIR(m))
+		mode[0] = 'd';
+	else if (S_ISFIFO(m))
+		mode[0] = 'p';
+	else if (S_ISLNK(m))
+		mode[0] = 'l';
+	else if (S_ISSOCK(m))
+		mode[0] = 's';
+	else
+		mode[0] = '?';
+
+	if (m & S_IRUSR) mode[1] = 'r';
+	if (m & S_IWUSR) mode[2] = 'w';
+	if (m & S_IXUSR) mode[3] = 'x';
+	if (m & S_IRGRP) mode[4] = 'r';
+	if (m & S_IWGRP) mode[5] = 'w';
+	if (m & S_IXGRP) mode[6] = 'x';
+	if (m & S_IROTH) mode[7] = 'r';
+	if (m & S_IWOTH) mode[8] = 'w';
+	if (m & S_IXOTH) mode[9] = 'x';
+
+	if (m & S_ISUID) mode[3] = (mode[3] == 'x') ? 's' : 'S';
+	if (m & S_ISGID) mode[6] = (mode[6] == 'x') ? 's' : 'S';
+	if (m & S_ISVTX) mode[9] = (mode[9] == 'x') ? 't' : 'T';
+
+	return mode;
+}
+
 int
 writefilestree(FILE *fp, git_tree *tree, const char *path)
 {
@@ -673,7 +715,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *path)
 		filesize = git_blob_rawsize((git_blob *)obj);
 
 		fputs("<tr><td>", fp);
-		fprintf(fp, "%u", git_tree_entry_filemode_raw(entry));
+		fprintf(fp, "%s", filemode(git_tree_entry_filemode(entry)));
 		fprintf(fp, "</td><td><a href=\"%sfile/", relpath);
 		xmlencode(fp, filename, strlen(filename));
 		fputs(".html\">", fp);
