@@ -38,7 +38,7 @@ table td {
 	padding: 0 0.4em;
 }
 
-#log tr:hover td, #files tr:hover td {
+#index tr:hover td, #log tr:hover td, #files tr:hover td {
 	background-color: #eee;
 }
 

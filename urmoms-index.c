@@ -108,7 +108,7 @@ writeheader(FILE *fp)
 	        "<td><h1>%s</h1><span class=\"desc\">%s</span></td></tr><tr><td></td><td>\n",
 		relpath, name, description);
 	fputs("</td></tr>\n</table>\n<hr/><div id=\"content\">\n"
-	      "<table><thead>\n"
+	      "<table id=\"index\"><thead>\n"
 	      "<tr><td>Name</td><td>Description</td><td>Owner</td><td>Last commit</td></tr>"
 	      "</thead><tbody>\n", fp);
 
