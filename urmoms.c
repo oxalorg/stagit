@@ -44,6 +44,7 @@ static const char *repodir;
 
 static char name[255];
 static char description[255];
+static char cloneurl[1024];
 static int hasreadme, haslicense;
 
 void
@@ -232,7 +233,15 @@ writeheader(FILE *fp)
 	xmlencode(fp, name, strlen(name));
 	fputs("</h1><span class=\"desc\">", fp);
 	xmlencode(fp, description, strlen(description));
-	fputs("</span></td></tr><tr><td></td><td>\n", fp);
+	fputs("</span></td></tr>", fp);
+	if (cloneurl[0]) {
+		fputs("<tr class=\"url\"><td></td><td>git clone <a href=\"", fp);
+		xmlencode(fp, cloneurl, strlen(cloneurl));
+		fputs("\">", fp);
+		xmlencode(fp, cloneurl, strlen(cloneurl));
+		fputs("</a></td></tr>", fp);
+	}
+	fputs("<tr><td></td><td>\n", fp);
 	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
 	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>", relpath);
 	if (hasreadme)
@@ -727,6 +736,20 @@ main(int argc, char *argv[])
 	if (fpread) {
 		if (!fgets(description, sizeof(description), fpread))
 			description[0] = '\0';
+		fclose(fpread);
+	}
+
+	/* read url or .git/url */
+	snprintf(path, sizeof(path), "%s%s%s",
+		repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "url");
+	if (!(fpread = fopen(path, "r"))) {
+		snprintf(path, sizeof(path), "%s%s%s",
+			repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/url");
+		fpread = fopen(path, "r");
+	}
+	if (fpread) {
+		if (!fgets(cloneurl, sizeof(cloneurl), fpread))
+			cloneurl[0] = '\0';
 		fclose(fpread);
 	}
 
