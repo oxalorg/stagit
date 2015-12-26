@@ -46,10 +46,10 @@ config.h:
 	@cp config.def.h $@
 
 urmoms: urmoms.o ${EXTRAOBJ}
-	${CC} -o $@ urmoms.o ${LDFLAGS}
+	${CC} -o $@ urmoms.o ${EXTRAOBJ} ${LDFLAGS}
 
 urmoms-index: urmoms-index.o ${EXTRAOBJ}
-	${CC} -o $@ urmoms-index.o ${LDFLAGS}
+	${CC} -o $@ urmoms-index.o ${EXTRAOBJ} ${LDFLAGS}
 
 clean:
 	rm -f ${BIN} ${OBJ}
