@@ -791,9 +791,6 @@ main(int argc, char *argv[])
 	p = xbasename(repodir);
 	snprintf(name, sizeof(name), "%s", p);
 	free(p);
-	/* remove .git suffix, typically used by bare repos */
-	if ((p = strstr(name, ".git")))
-		*p = '\0';
 
 	/* read description or .git/description */
 	snprintf(path, sizeof(path), "%s%s%s",
