@@ -10,7 +10,7 @@
 #
 # Usage:
 # - mkdir -p htmldir && cd htmldir
-# - sh example.sh repo-dir
+# - sh example.sh
 
 set -e
 

@@ -1,30 +1,62 @@
+stagit
+======
+
+static git page generator
+
 
 Usage
 -----
 
-mkdir -p htmldir
-cd htmldir
-stagit path-to-repo
+Make files per repository:
+
+	$ mkdir -p htmldir && cd htmldir
+	$ stagit path-to-repo
+
+Make index file for repositories:
+
+	$ stagit-index repodir1 repodir2 repodir3 > index.html
 
 
 Install
 -------
+
 $ make
 # doas make install
 
 
 Dependencies
 ------------
+
 - libgit2 (v0.22+).
 - C compiler
 - make
 
 
+Documentation
+-------------
+
+$ man stagit
+$ man stagit-index
+
+
 Features
 --------
 
+- Log of all commits.
 - Log and diffstat per commit.
-- Show file tree.
-- Detect README and LICENSE file to make a webpage.
-- Atom feed git log.
-- Make index page for multiple repositories.
+- Show file tree with linkable line numbers.
+- Detect README and LICENSE file from HEAD and link it as a webpage.
+- Atom feed log.
+- Make index page for multiple repositories with stagit-index.
+- After generating the pages (relatively slow) serving the files is very fast,
+  simple and requires little resources (because the content is static), only
+  a HTTP file server is required.
+
+
+Cons
+----
+
+- Not suitable for large repositories (2000+ commits).
+- Not suitable for repositories with many branches, a quite linear history is assumed.
+- Relatively slow to run the first time (about 3 seconds for sbase, 1500+ commits),
+  incremental updates after it are faster.
