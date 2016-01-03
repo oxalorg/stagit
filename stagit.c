@@ -820,9 +820,11 @@ writebranches(FILE *fp)
 
 		relpath = "";
 
-		fputs("<tr><td>", fp);
+		fputs("<tr><td><a href=\"log-", fp);
 		xmlencode(fp, branchname, strlen(branchname));
-		fputs("</td><td>", fp);
+		fputs(".html\">", fp);
+		xmlencode(fp, branchname, strlen(branchname));
+		fputs("</a></td><td>", fp);
 		if (ci->author)
 			printtimeshort(fp, &(ci->author->when));
 		fputs("</td><td>", fp);
