@@ -1,3 +1,7 @@
+refs:
+? detect branches from remote origin?
+  (no need to pull local branches for non-bare repos).
+
 performance:
 - optimize git_diff_get_stats.
 - speed up generating files.
