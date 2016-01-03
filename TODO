@@ -2,9 +2,13 @@ performance:
 - optimize git_diff_get_stats.
 - speed up generating files.
 
+cleanup:
+- simplify writebranches and writetags, just use git_reference_*,
+  it should kill some lines.
+
 layout:
 - make top menu look nicer in links/lynx again.
-- show tags in log.
+? show tags in log.
 
 documentation:
 - improve mandoc pages.
