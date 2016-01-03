@@ -881,17 +881,24 @@ writetags(FILE *fp)
 	const git_oid *id = NULL;
 	size_t i, len;
 
+	/* summary page with branches and tags */
+	memset(&tagnames, 0, sizeof(tagnames));
+	if (git_tag_list(&tagnames, repo))
+		return -1;
+	if (!tagnames.count) {
+		git_strarray_free(&tagnames);
+		return 0;
+	}
+
+	/* sort names */
+	qsort(tagnames.strings, tagnames.count, sizeof(char *),
+	      (int (*)(const void *, const void *))&tagcompare);
+
 	fputs("<h2>Tags</h2><table id=\"branches\"><thead>\n<tr><td>Tag</td>"
 	      "<td>Age</td><td>Commit message</td>"
 	      "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
 	      "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
 
-	/* summary page with branches and tags */
-	memset(&tagnames, 0, sizeof(tagnames));
-	git_tag_list(&tagnames, repo);
-	/* sort names */
-	qsort(tagnames.strings, tagnames.count, sizeof(char *),
-	      (int (*)(const void *, const void *))&tagcompare);
 	for (i = 0; i < tagnames.count; i++) {
 		if (git_revparse_single(&obj, repo, tagnames.strings[i]))
 			continue;
@@ -946,6 +953,7 @@ writerefs(FILE *fp)
 
 	if ((ret = writebranches(fp)))
 		return ret;
+	fputs("<br/>", fp);
 	return writetags(fp);
 }
 
