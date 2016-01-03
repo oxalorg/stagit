@@ -4,6 +4,7 @@ performance:
 
 layout:
 - make top menu look nicer in links/lynx again.
+- show tags in log.
 
 documentation:
 - improve mandoc pages.

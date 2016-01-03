@@ -264,7 +264,8 @@ writeheader(FILE *fp)
 	}
 	fputs("<tr><td></td><td>\n", fp);
 	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
-	fprintf(fp, "<a href=\"%sfiles.html\">Files</a>", relpath);
+	fprintf(fp, "<a href=\"%sfiles.html\">Files</a> | ", relpath);
+	fprintf(fp, "<a href=\"%srefs.html\">Refs</a>", relpath);
 	if (hasreadme)
 		fprintf(fp, " | <a href=\"%sfile/README.html\">README</a>", relpath);
 	if (haslicense)
@@ -283,7 +284,7 @@ writefooter(FILE *fp)
 void
 writeblobhtml(FILE *fp, const git_blob *blob)
 {
-	off_t i = 0;
+	off_t i;
 	size_t n = 1;
 	char *nfmt = "<a href=\"#l%d\" id=\"l%d\">%d</a>\n";
 	const char *s = git_blob_rawcontent(blob);
@@ -293,12 +294,11 @@ writeblobhtml(FILE *fp, const git_blob *blob)
 
 	if (len) {
 		fprintf(fp, nfmt, n, n, n);
-		while (i < len - 1) {
+		for (i = 0; i < len - 1; i++) {
 			if (s[i] == '\n') {
 				n++;
 				fprintf(fp, nfmt, n, n, n);
 			}
-			i++;
 		}
 	}
 
@@ -319,7 +319,7 @@ printcommit(FILE *fp, struct commitinfo *ci)
 
 #if 0
 	if ((count = (int)git_commit_parentcount(commit)) > 1) {
-		fprintf(fp, "<b>Merge:</b>");
+		fputs("<b>Merge:</b>", fp);
 		for (i = 0; i < count; i++) {
 			git_oid_tostr(buf, 8, git_commit_parent_id(commit, i));
 			fprintf(fp, " <a href=\"%scommit/%s.html\">%s</a>",
@@ -329,9 +329,9 @@ printcommit(FILE *fp, struct commitinfo *ci)
 	}
 #endif
 	if (ci->author) {
-		fprintf(fp, "<b>Author:</b> ");
+		fputs("<b>Author:</b> ", fp);
 		xmlencode(fp, ci->author->name, strlen(ci->author->name));
-		fprintf(fp, " &lt;<a href=\"mailto:");
+		fputs(" &lt;<a href=\"mailto:", fp);
 		xmlencode(fp, ci->author->email, strlen(ci->author->email));
 		fputs("\">", fp);
 		xmlencode(fp, ci->author->email, strlen(ci->author->email));
@@ -377,7 +377,7 @@ printshowfile(struct commitinfo *ci)
 		if (!git_diff_stats_to_buf(&statsbuf, ci->stats,
 		    GIT_DIFF_STATS_FULL | GIT_DIFF_STATS_SHORT, 80)) {
 			if (statsbuf.ptr && statsbuf.ptr[0]) {
-				fprintf(fp, "<b>Diffstat:</b>\n");
+				fputs("<b>Diffstat:</b>\n", fp);
 				fputs(statsbuf.ptr, fp);
 			}
 		}
@@ -431,24 +431,30 @@ printshowfile(struct commitinfo *ci)
 	}
 	git_buf_free(&statsbuf);
 
-	fputs( "</pre>\n", fp);
+	fputs("</pre>\n", fp);
 	writefooter(fp);
 	fclose(fp);
 	return;
 }
 
-void
-writelog(FILE *fp)
+int
+writelog(FILE *fp, const char *branch)
 {
 	struct commitinfo *ci;
+	const git_oid *oid;
 	git_revwalk *w = NULL;
+	git_object *obj = NULL;
 	git_oid id;
 	size_t len;
 
 	mkdir("commit", 0755);
 
+	if (git_revparse_single(&obj, repo, branch))
+		return -1;
+	oid = git_object_id(obj);
+
 	git_revwalk_new(&w, repo);
-	git_revwalk_push_head(w);
+	git_revwalk_push(w, oid);
 	git_revwalk_sorting(w, GIT_SORT_TIME);
 	git_revwalk_simplify_first_parent(w);
 
@@ -491,10 +497,14 @@ writelog(FILE *fp)
 
 		commitinfo_free(ci);
 	}
-	fprintf(fp, "</tbody></table>");
+	fputs("</tbody></table>", fp);
 
 	git_revwalk_free(w);
+	git_object_free(obj);
+
 	relpath = "";
+
+	return 0;
 }
 
 void
@@ -521,7 +531,7 @@ printcommitatom(FILE *fp, struct commitinfo *ci)
 
 #if 0
 	if ((count = (int)git_commit_parentcount(commit)) > 1) {
-		fprintf(fp, "Merge:");
+		fputs("Merge:", fp);
 		for (i = 0; i < count; i++) {
 			git_oid_tostr(buf, 8, git_commit_parent_id(commit, i));
 			fprintf(fp, " %s", buf);
@@ -531,11 +541,11 @@ printcommitatom(FILE *fp, struct commitinfo *ci)
 #endif
 
 	if (ci->author) {
-		fprintf(fp, "Author: ");
+		fputs("Author: ", fp);
 		xmlencode(fp, ci->author->name, strlen(ci->author->name));
-		fprintf(fp, " &lt;");
+		fputs(" &lt;", fp);
 		xmlencode(fp, ci->author->email, strlen(ci->author->email));
-		fprintf(fp, "&gt;\nDate:   ");
+		fputs("&gt;\nDate:   ", fp);
 		printtime(fp, &(ci->author->when));
 	}
 	fputc('\n', fp);
@@ -619,7 +629,7 @@ writeblob(git_object *obj, const char *filename, git_off_t filesize)
 	fputs("</p><hr/>", fp);
 
 	if (git_blob_is_binary((git_blob *)obj)) {
-		fprintf(fp, "<p>Binary file</p>\n");
+		fputs("<p>Binary file</p>\n", fp);
 	} else {
 		writeblobhtml(fp, (git_blob *)obj);
 		if (ferror(fp))
@@ -676,7 +686,7 @@ filemode(git_filemode_t m)
 }
 
 int
-writefilestree(FILE *fp, git_tree *tree, const char *path)
+writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 {
 	const git_tree_entry *entry = NULL;
 	const char *filename;
@@ -690,15 +700,15 @@ writefilestree(FILE *fp, git_tree *tree, const char *path)
 	for (i = 0; i < count; i++) {
 		if (!(entry = git_tree_entry_byindex(tree, i)))
 			return -1;
-
-		filename = git_tree_entry_name(entry);
 		if (git_tree_entry_to_object(&obj, repo, entry))
 			return -1;
+		filename = git_tree_entry_name(entry);
 		switch (git_object_type(obj)) {
 		case GIT_OBJ_BLOB:
 			break;
 		case GIT_OBJ_TREE:
-			ret = writefilestree(fp, (git_tree *)obj, filename);
+			ret = writefilestree(fp, (git_tree *)obj, branch,
+			                     filename);
 			git_object_free(obj);
 			if (ret)
 				return ret;
@@ -708,7 +718,8 @@ writefilestree(FILE *fp, git_tree *tree, const char *path)
 			continue;
 		}
 		if (path[0]) {
-			snprintf(filepath, sizeof(filepath), "%s/%s", path, filename);
+			snprintf(filepath, sizeof(filepath), "%s/%s",
+			         path, filename);
 			filename = filepath;
 		}
 
@@ -731,42 +742,221 @@ writefilestree(FILE *fp, git_tree *tree, const char *path)
 }
 
 int
-writefiles(FILE *fp)
+writefiles(FILE *fp, const char *branch)
 {
 	const git_oid *id;
 	git_tree *tree = NULL;
 	git_object *obj = NULL;
 	git_commit *commit = NULL;
+	int ret = -1;
 
 	fputs("<table id=\"files\"><thead>\n<tr>"
 	      "<td>Mode</td><td>Name</td><td class=\"num\">Size</td>"
 	      "</tr>\n</thead><tbody>\n", fp);
 
-	if (git_revparse_single(&obj, repo, "HEAD"))
-		return -1;
+	if (git_revparse_single(&obj, repo, branch))
+		goto err;
 	id = git_object_id(obj);
 	if (git_commit_lookup(&commit, repo, id))
-		return -1;
+		goto err;
 	if (git_commit_tree(&tree, commit)) {
 		git_commit_free(commit);
-		return -1;
+		goto err;
 	}
-	git_commit_free(commit);
+	ret = writefilestree(fp, tree, branch, "");
 
-	writefilestree(fp, tree, "");
+err:
+	fputs("</tbody></table>", fp);
 
+	git_object_free(obj);
 	git_commit_free(commit);
 	git_tree_free(tree);
 
+	return ret;
+}
+
+int
+writebranches(FILE *fp)
+{
+	struct commitinfo *ci;
+	git_branch_iterator *it = NULL;
+	git_branch_t branch;
+	git_reference *ref = NULL, *dref = NULL;
+	const git_oid *id = NULL;
+	const char *branchname = NULL;
+	size_t len;
+	int ret = -1;
+
+	/* log for local branches */
+	if (git_branch_iterator_new(&it, repo, GIT_BRANCH_LOCAL))
+		return -1;
+
+	fputs("<h2>Branches</h2><table id=\"branches\"><thead>\n<tr><td>Branch</td><td>Age</td>"
+		  "<td>Commit message</td>"
+		  "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
+		  "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
+
+	while (!git_branch_next(&ref, &branch, it)) {
+		if (git_branch_name(&branchname, ref))
+			continue;
+
+		id = NULL;
+		switch (git_reference_type(ref)) {
+		case GIT_REF_SYMBOLIC:
+			if (git_reference_resolve(&dref, ref))
+				goto err;
+			id = git_reference_target(dref);
+			break;
+		case GIT_REF_OID:
+			id = git_reference_target(ref);
+			break;
+		default:
+			continue;
+		}
+		if (!id)
+			goto err;
+		if (!(ci = commitinfo_getbyoid(id)))
+			break;
+
+		relpath = "";
+
+		fputs("<tr><td>", fp);
+		xmlencode(fp, branchname, strlen(branchname));
+		fputs("</td><td>", fp);
+		if (ci->author)
+			printtimeshort(fp, &(ci->author->when));
+		fputs("</td><td>", fp);
+		if (ci->summary) {
+			fprintf(fp, "<a href=\"%scommit/%s.html\">", relpath, ci->oid);
+			if ((len = strlen(ci->summary)) > summarylen) {
+				xmlencode(fp, ci->summary, summarylen - 1);
+				fputs("…", fp);
+			} else {
+				xmlencode(fp, ci->summary, len);
+			}
+			fputs("</a>", fp);
+		}
+		fputs("</td><td>", fp);
+		if (ci->author)
+			xmlencode(fp, ci->author->name, strlen(ci->author->name));
+		fputs("</td><td class=\"num\">", fp);
+		fprintf(fp, "%zu", ci->filecount);
+		fputs("</td><td class=\"num\">", fp);
+		fprintf(fp, "+%zu", ci->addcount);
+		fputs("</td><td class=\"num\">", fp);
+		fprintf(fp, "-%zu", ci->delcount);
+		fputs("</td></tr>\n", fp);
+
+		relpath = "../";
+
+		commitinfo_free(ci);
+		git_reference_free(ref);
+		git_reference_free(dref);
+		ref = NULL;
+		dref = NULL;
+	}
+	ret = 0;
+
+err:
 	fputs("</tbody></table>", fp);
+	git_reference_free(ref);
+	git_reference_free(dref);
+	git_branch_iterator_free(it);
+
+	return ret;
+}
+
+int
+tagcompare(void *s1, void *s2)
+{
+	return strcmp(*(char **)s1, *(char **)s2);
+}
+
+int
+writetags(FILE *fp)
+{
+	struct commitinfo *ci;
+	git_strarray tagnames;
+	git_object *obj = NULL;
+	const git_oid *id = NULL;
+	size_t i, len;
+
+	fputs("<h2>Tags</h2><table id=\"branches\"><thead>\n<tr><td>Tag</td>"
+	      "<td>Age</td><td>Commit message</td>"
+	      "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
+	      "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
+
+	/* summary page with branches and tags */
+	memset(&tagnames, 0, sizeof(tagnames));
+	git_tag_list(&tagnames, repo);
+	/* sort names */
+	qsort(tagnames.strings, tagnames.count, sizeof(char *),
+	      (int (*)(const void *, const void *))&tagcompare);
+	for (i = 0; i < tagnames.count; i++) {
+		if (git_revparse_single(&obj, repo, tagnames.strings[i]))
+			continue;
+		id = git_object_id(obj);
+		if (!(ci = commitinfo_getbyoid(id)))
+			break;
+
+		relpath = "";
+
+		fputs("<tr><td>", fp);
+		xmlencode(fp, tagnames.strings[i], strlen(tagnames.strings[i]));
+		fputs("</td><td>", fp);
+		if (ci->author)
+			printtimeshort(fp, &(ci->author->when));
+		fputs("</td><td>", fp);
+		if (ci->summary) {
+			fprintf(fp, "<a href=\"%scommit/%s.html\">", relpath, ci->oid);
+			if ((len = strlen(ci->summary)) > summarylen) {
+				xmlencode(fp, ci->summary, summarylen - 1);
+				fputs("…", fp);
+			} else {
+				xmlencode(fp, ci->summary, len);
+			}
+			fputs("</a>", fp);
+		}
+		fputs("</td><td>", fp);
+		if (ci->author)
+			xmlencode(fp, ci->author->name, strlen(ci->author->name));
+		fputs("</td><td class=\"num\">", fp);
+		fprintf(fp, "%zu", ci->filecount);
+		fputs("</td><td class=\"num\">", fp);
+		fprintf(fp, "+%zu", ci->addcount);
+		fputs("</td><td class=\"num\">", fp);
+		fprintf(fp, "-%zu", ci->delcount);
+		fputs("</td></tr>\n", fp);
+
+		relpath = "../";
+
+		commitinfo_free(ci);
+		git_object_free(obj);
+	}
+	fputs("</tbody></table>", fp);
+	git_strarray_free(&tagnames);
 
 	return 0;
+}
+
+int
+writerefs(FILE *fp)
+{
+	int ret;
+
+	if ((ret = writebranches(fp)))
+		return ret;
+	return writetags(fp);
 }
 
 int
 main(int argc, char *argv[])
 {
 	git_object *obj = NULL;
+	git_branch_iterator *it = NULL;
+	git_branch_t branch;
+	git_reference *ref = NULL;
+	const char *branchname = NULL;
 	const git_error *e = NULL;
 	FILE *fp, *fpread;
 	char path[PATH_MAX], *p;
@@ -827,15 +1017,43 @@ main(int argc, char *argv[])
 	hasreadme = !git_revparse_single(&obj, repo, "HEAD:README");
 	git_object_free(obj);
 
+	/* log for HEAD */
 	fp = efopen("log.html", "w");
 	writeheader(fp);
-	writelog(fp);
+	writelog(fp, "HEAD");
 	writefooter(fp);
 	fclose(fp);
 
+	/* log for local branches */
+	if (git_branch_iterator_new(&it, repo, GIT_BRANCH_LOCAL))
+		err(1, "git_branch_iterator_new");
+
+	while (!git_branch_next(&ref, &branch, it)) {
+		if (git_branch_name(&branchname, ref))
+			continue;
+
+		snprintf(path, sizeof(path), "log-%s.html", branchname);
+
+		fp = efopen(path, "w");
+		writeheader(fp);
+		writelog(fp, branchname);
+		writefooter(fp);
+		fclose(fp);
+	}
+	git_reference_free(ref);
+	git_branch_iterator_free(it);
+
+	/* files for HEAD */
 	fp = efopen("files.html", "w");
 	writeheader(fp);
-	writefiles(fp);
+	writefiles(fp, "HEAD");
+	writefooter(fp);
+	fclose(fp);
+
+	/* summary page with branches and tags */
+	fp = efopen("refs.html", "w");
+	writeheader(fp);
+	writerefs(fp);
 	writefooter(fp);
 	fclose(fp);
 
