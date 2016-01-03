@@ -22,8 +22,8 @@ struct commitinfo {
 	char parentoid[GIT_OID_HEXSZ + 1];
 
 	const git_signature *author;
-	const char *summary;
-	const char *msg;
+	const char          *summary;
+	const char          *msg;
 
 	git_diff_stats *stats;
 	git_diff       *diff;
@@ -263,7 +263,7 @@ writeheader(FILE *fp)
 		fputs("</a></td></tr>", fp);
 	}
 	fputs("<tr><td></td><td>\n", fp);
-	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
+	fprintf(fp, "<a href=\"%slog/HEAD.html\">Log</a> | ", relpath);
 	fprintf(fp, "<a href=\"%sfiles.html\">Files</a> | ", relpath);
 	fprintf(fp, "<a href=\"%srefs.html\">Refs/branches</a>", relpath);
 	if (hasreadme)
@@ -698,15 +698,15 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 
 	count = git_tree_entrycount(tree);
 	for (i = 0; i < count; i++) {
-		if (!(entry = git_tree_entry_byindex(tree, i)))
-			return -1;
-		if (git_tree_entry_to_object(&obj, repo, entry))
+		if (!(entry = git_tree_entry_byindex(tree, i)) ||
+		    git_tree_entry_to_object(&obj, repo, entry))
 			return -1;
 		filename = git_tree_entry_name(entry);
 		switch (git_object_type(obj)) {
 		case GIT_OBJ_BLOB:
 			break;
 		case GIT_OBJ_TREE:
+			/* NOTE: recurses */
 			ret = writefilestree(fp, (git_tree *)obj, branch,
 			                     filename);
 			git_object_free(obj);
@@ -722,7 +722,6 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 			         path, filename);
 			filename = filepath;
 		}
-
 		filesize = git_blob_rawsize((git_blob *)obj);
 
 		fputs("<tr><td>", fp);
@@ -757,12 +756,9 @@ writefiles(FILE *fp, const char *branch)
 	if (git_revparse_single(&obj, repo, branch))
 		goto err;
 	id = git_object_id(obj);
-	if (git_commit_lookup(&commit, repo, id))
+	if (git_commit_lookup(&commit, repo, id) ||
+	    git_commit_tree(&tree, commit))
 		goto err;
-	if (git_commit_tree(&tree, commit)) {
-		git_commit_free(commit);
-		goto err;
-	}
 	ret = writefilestree(fp, tree, branch, "");
 
 err:
@@ -820,11 +816,9 @@ writebranches(FILE *fp)
 
 		relpath = "";
 
-		fputs("<tr><td><a href=\"log-", fp);
+		fputs("<tr><td>", fp);
 		xmlencode(fp, branchname, strlen(branchname));
-		fputs(".html\">", fp);
-		xmlencode(fp, branchname, strlen(branchname));
-		fputs("</a></td><td>", fp);
+		fputs("</td><td>", fp);
 		if (ci->author)
 			printtimeshort(fp, &(ci->author->when));
 		fputs("</td><td>", fp);
@@ -963,10 +957,6 @@ int
 main(int argc, char *argv[])
 {
 	git_object *obj = NULL;
-	git_branch_iterator *it = NULL;
-	git_branch_t branch;
-	git_reference *ref = NULL;
-	const char *branchname = NULL;
 	const git_error *e = NULL;
 	FILE *fp, *fpread;
 	char path[PATH_MAX], *p;
@@ -1028,30 +1018,14 @@ main(int argc, char *argv[])
 	git_object_free(obj);
 
 	/* log for HEAD */
-	fp = efopen("log.html", "w");
+	mkdir("log", 0755);
+	fp = efopen("log/HEAD.html", "w");
+	relpath = "../";
 	writeheader(fp);
+	relpath = "";
 	writelog(fp, "HEAD");
 	writefooter(fp);
 	fclose(fp);
-
-	/* log for local branches */
-	if (git_branch_iterator_new(&it, repo, GIT_BRANCH_LOCAL))
-		err(1, "git_branch_iterator_new");
-
-	while (!git_branch_next(&ref, &branch, it)) {
-		if (git_branch_name(&branchname, ref))
-			continue;
-
-		snprintf(path, sizeof(path), "log-%s.html", branchname);
-
-		fp = efopen(path, "w");
-		writeheader(fp);
-		writelog(fp, branchname);
-		writefooter(fp);
-		fclose(fp);
-	}
-	git_reference_free(ref);
-	git_branch_iterator_free(it);
 
 	/* files for HEAD */
 	fp = efopen("files.html", "w");
