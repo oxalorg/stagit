@@ -265,7 +265,7 @@ writeheader(FILE *fp)
 	fputs("<tr><td></td><td>\n", fp);
 	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
 	fprintf(fp, "<a href=\"%sfiles.html\">Files</a> | ", relpath);
-	fprintf(fp, "<a href=\"%srefs.html\">Refs</a>", relpath);
+	fprintf(fp, "<a href=\"%srefs.html\">Refs/branches</a>", relpath);
 	if (hasreadme)
 		fprintf(fp, " | <a href=\"%sfile/README.html\">README</a>", relpath);
 	if (haslicense)
