@@ -463,9 +463,8 @@ writelog(FILE *fp, const char *branch)
 	fputs("<table id=\"log\"><thead>\n<tr><td>Age</td><td>Commit message</td>"
 		  "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
 		  "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
+	relpath = "../";
 	while (!git_revwalk_next(&id, w)) {
-		relpath = "";
-
 		if (!(ci = commitinfo_getbyoid(&id)))
 			break;
 
@@ -494,7 +493,6 @@ writelog(FILE *fp, const char *branch)
 		fprintf(fp, "-%zu", ci->delcount);
 		fputs("</td></tr>\n", fp);
 
-		relpath = "../";
 		printshowfile(ci);
 
 		commitinfo_free(ci);
