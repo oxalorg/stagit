@@ -409,7 +409,9 @@ printshowfile(struct commitinfo *ci)
 			if (git_patch_get_hunk(&hunk, &nhunklines, patch, j))
 				break;
 
-			fprintf(fp, "<span class=\"h\">%s</span>\n", hunk->header);
+			fputs("<span class=\"h\">", fp);
+			xmlencode(fp, hunk->header, strcspn(hunk->header, "\n"));
+			fputs("</span>", fp);
 
 			for (k = 0; ; k++) {
 				if (git_patch_get_line_in_hunk(&line, patch, j, k))
