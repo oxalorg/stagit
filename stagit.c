@@ -1008,6 +1008,7 @@ main(int argc, char *argv[])
 	if (fpread) {
 		if (!fgets(cloneurl, sizeof(cloneurl), fpread))
 			cloneurl[0] = '\0';
+		cloneurl[strcspn(cloneurl, "\n")] = '\0';
 		fclose(fpread);
 	}
 
