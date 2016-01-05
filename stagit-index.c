@@ -221,6 +221,7 @@ main(int argc, char *argv[])
 		if (fp) {
 			if (!fgets(owner, sizeof(owner), fp))
 				owner[0] = '\0';
+			owner[strcspn(owner, "\n")] = '\0';
 			fclose(fp);
 		}
 		writelog(stdout);
