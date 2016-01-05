@@ -263,7 +263,7 @@ writeheader(FILE *fp)
 		fputs("</a></td></tr>", fp);
 	}
 	fputs("<tr><td></td><td>\n", fp);
-	fprintf(fp, "<a href=\"%slog/HEAD.html\">Log</a> | ", relpath);
+	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
 	fprintf(fp, "<a href=\"%sfiles.html\">Files</a> | ", relpath);
 	fprintf(fp, "<a href=\"%srefs.html\">Refs/branches</a>", relpath);
 	if (hasreadme)
@@ -463,8 +463,10 @@ writelog(FILE *fp, const char *branch)
 	fputs("<table id=\"log\"><thead>\n<tr><td>Age</td><td>Commit message</td>"
 		  "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
 		  "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
-	relpath = "../";
+
 	while (!git_revwalk_next(&id, w)) {
+		relpath = "";
+
 		if (!(ci = commitinfo_getbyoid(&id)))
 			break;
 
@@ -493,6 +495,7 @@ writelog(FILE *fp, const char *branch)
 		fprintf(fp, "-%zu", ci->delcount);
 		fputs("</td></tr>\n", fp);
 
+		relpath = "../";
 		printshowfile(ci);
 
 		commitinfo_free(ci);
@@ -1019,7 +1022,7 @@ main(int argc, char *argv[])
 
 	/* log for HEAD */
 	mkdir("log", 0755);
-	fp = efopen("log/HEAD.html", "w");
+	fp = efopen("log.html", "w");
 	relpath = "../";
 	writeheader(fp);
 	relpath = "";

@@ -145,7 +145,7 @@ writelog(FILE *fp)
 
 	fputs("<tr><td><a href=\"", fp);
 	xmlencode(fp, name, strlen(name));
-	fputs("/log/HEAD.html\">", fp);
+	fputs("/log.html\">", fp);
 	xmlencode(fp, name, strlen(name));
 	fputs("</a></td><td>", fp);
 	xmlencode(fp, description, strlen(description));
