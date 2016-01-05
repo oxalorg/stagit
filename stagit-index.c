@@ -169,7 +169,7 @@ main(int argc, char *argv[])
 	const git_error *e = NULL;
 	FILE *fp;
 	char path[PATH_MAX], *p;
-	int i, status;
+	int i, ret = 0;
 
 	if (argc < 2) {
 		fprintf(stderr, "%s [repodir...]\n", argv[0]);
@@ -182,11 +182,12 @@ main(int argc, char *argv[])
 	for (i = 1; i < argc; i++) {
 		repodir = argv[i];
 
-		if ((status = git_repository_open_ext(&repo, repodir,
-			GIT_REPOSITORY_OPEN_NO_SEARCH, NULL)) < 0) {
+		if (git_repository_open_ext(&repo, repodir,
+		    GIT_REPOSITORY_OPEN_NO_SEARCH, NULL)) {
 			e = giterr_last();
-			fprintf(stderr, "error %d/%d: %s\n", status, e->klass, e->message);
-			return status;
+			fprintf(stderr, "%s: %s\n", argv[0], e->message);
+			ret = 1;
+			continue;
 		}
 
 		/* use directory name as name */
@@ -232,5 +233,5 @@ main(int argc, char *argv[])
 	git_repository_free(repo);
 	git_libgit2_shutdown();
 
-	return 0;
+	return ret;
 }
