@@ -1022,9 +1022,8 @@ main(int argc, char *argv[])
 	/* log for HEAD */
 	mkdir("log", 0755);
 	fp = efopen("log.html", "w");
-	relpath = "../";
-	writeheader(fp);
 	relpath = "";
+	writeheader(fp);
 	writelog(fp, "HEAD");
 	writefooter(fp);
 	fclose(fp);
