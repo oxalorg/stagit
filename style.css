@@ -38,7 +38,11 @@ table td {
 	padding: 0 0.4em;
 }
 
-#index tr:hover td, #log tr:hover td, #files tr:hover td {
+#branches tr:hover td,
+#tags tr:hover td,
+#index tr:hover td,
+#log tr:hover td,
+#files tr:hover td {
 	background-color: #eee;
 }
 
@@ -59,8 +63,8 @@ pre {
 	font-family: monospace;
 }
 
-pre .h {
-	color: darkcyan;
+pre a.h {
+	color: darkblue;
 }
 
 pre a.i {
@@ -71,6 +75,8 @@ pre a.d {
 	color: red;
 }
 
-pre a.i:hover, pre a.d:hover {
+pre a.h:hover,
+pre a.i:hover,
+pre a.d:hover {
 	text-decoration: none;
 }
