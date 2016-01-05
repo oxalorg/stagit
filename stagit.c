@@ -410,7 +410,7 @@ printshowfile(struct commitinfo *ci)
 				break;
 
 			fputs("<span class=\"h\">", fp);
-			xmlencode(fp, hunk->header, strcspn(hunk->header, "\n"));
+			xmlencode(fp, hunk->header, hunk->header_len);
 			fputs("</span>", fp);
 
 			for (k = 0; ; k++) {
