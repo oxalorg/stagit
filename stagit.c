@@ -891,7 +891,7 @@ writetags(FILE *fp)
 	qsort(tagnames.strings, tagnames.count, sizeof(char *),
 	      (int (*)(const void *, const void *))&tagcompare);
 
-	fputs("<h2>Tags</h2><table id=\"branches\"><thead>\n<tr><td>Tag</td>"
+	fputs("<h2>Tags</h2><table id=\"tags\"><thead>\n<tr><td>Tag</td>"
 	      "<td>Age</td><td>Commit message</td>"
 	      "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
 	      "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
