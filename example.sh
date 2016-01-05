@@ -28,7 +28,7 @@ find . -maxdepth 1 -type d | grep -v "^.$" | sort | while read -r dir; do
 
 	printf "%s..." "${d}"
 	cd "${curdir}"
-	
+
 	test -d "${d}" || mkdir -p "${d}"
 	cd "${d}"
 	stagit "${reposdir}${d}"
