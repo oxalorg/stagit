@@ -34,4 +34,10 @@ find . -maxdepth 1 -type d | grep -v "^.$" | sort | while read -r dir; do
 	stagit "${reposdir}${d}"
 
 	printf " done\n"
+
+	# symlinks
+	ln -sf log.html index.html
+	ln -sf ../style.css style.css
+	ln -sf ../logo.png logo.png
+	ln -sf ../favicon.png favicon.png
 done
