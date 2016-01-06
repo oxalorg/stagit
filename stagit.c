@@ -842,15 +842,17 @@ writerefs(FILE *fp)
 				printtimeshort(fp, &(ci->author->when));
 			fputs("</td><td>", fp);
 			if (ci->summary) {
-				fprintf(fp, "<a href=\"%scommit/%s.html\">",
-				        relpath, ci->oid);
+				if (j)
+					fprintf(fp, "<a href=\"%scommit/%s.html\">",
+					        relpath, ci->oid);
 				if ((len = strlen(ci->summary)) > summarylen) {
 					xmlencode(fp, ci->summary, summarylen - 1);
 					fputs("…", fp);
 				} else {
 					xmlencode(fp, ci->summary, len);
 				}
-				fputs("</a>", fp);
+				if (j)
+					fputs("</a>", fp);
 			}
 			fputs("</td><td>", fp);
 			if (ci->author)
