@@ -950,7 +950,6 @@ main(int argc, char *argv[])
 	git_object_free(obj);
 
 	/* log for HEAD */
-	mkdir("log", 0755);
 	fp = efopen("log.html", "w");
 	relpath = "";
 	writeheader(fp);
