@@ -34,11 +34,12 @@ commit/commitid.html . This file will contain the diff and diffstat of the
 commit. It will write the string "binary files differ" if the data is
 considered to be non-textual.
 .Pp
-The basename of the directory is used as the name.
+The basename of the directory is used as the name. The suffix ".git" is
+removed from the basename, this is commonly used for "bare" repos.
 .Pp
 The content of the follow files specifies the meta data for each repository:
 .Bl -tag -width Ds
-.It .git/description or description (bare repos).
+.It .git/description or description (bare repo).
 description
 .It .git/owner or owner (bare repo).
 owner of repository

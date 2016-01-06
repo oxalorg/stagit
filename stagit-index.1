@@ -12,7 +12,8 @@
 will create an index HTML page for the repositories specified and writes
 the HTML data to stdout.
 .Pp
-The basename of the directory is used as the name.
+The basename of the directory is used as the name. The suffix ".git" is
+removed from the basename, this is commonly used for "bare" repos.
 .Pp
 The content of the follow files specifies the meta data for each repository:
 .Bl -tag -width Ds
