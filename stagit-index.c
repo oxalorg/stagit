@@ -118,13 +118,13 @@ writeheader(FILE *fp)
 int
 writefooter(FILE *fp)
 {
-	return !fputs("</tbody></table></div></body>\n</html>", fp);
+	return !fputs("</tbody>\n</table>\n</div>\n</body>\n</html>\n", fp);
 }
 
 int
 writelog(FILE *fp)
 {
-	char *stripped_name, *p;
+	char *stripped_name = NULL, *p;
 	git_commit *commit = NULL;
 	const git_signature *author;
 	git_revwalk *w = NULL;
@@ -144,18 +144,17 @@ writelog(FILE *fp)
 
 	author = git_commit_author(commit);
 
-	fputs("<tr><td><a href=\"", fp);
-	xmlencode(fp, name, strlen(name));
-	fputs("/log.html\">", fp);
-
 	/* strip .git suffix */
 	if (!(stripped_name = strdup(name)))
 		err(1, "strdup");
 	if ((p = strrchr(stripped_name, '.')))
 		if (!strcmp(p, ".git"))
 			*p = '\0';
-	xmlencode(fp, stripped_name, strlen(stripped_name));
 
+	fputs("<tr><td><a href=\"", fp);
+	xmlencode(fp, stripped_name, strlen(stripped_name));
+	fputs("/log.html\">", fp);
+	xmlencode(fp, stripped_name, strlen(stripped_name));
 	fputs("</a></td><td>", fp);
 	xmlencode(fp, description, strlen(description));
 	fputs("</td><td>", fp);
@@ -168,6 +167,7 @@ writelog(FILE *fp)
 	git_commit_free(commit);
 err:
 	git_revwalk_free(w);
+	free(stripped_name);
 
 	return ret;
 }

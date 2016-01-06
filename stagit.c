@@ -42,7 +42,8 @@ static git_repository *repo;
 static const char *relpath = "";
 static const char *repodir;
 
-static char name[255];
+static char *name;
+static char *stripped_name;
 static char description[255];
 static char cloneurl[1024];
 static int hasreadme, haslicense;
@@ -239,7 +240,7 @@ writeheader(FILE *fp)
 		"<html dir=\"ltr\" lang=\"en\">\n<head>\n"
 		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n"
 		"<meta http-equiv=\"Content-Language\" content=\"en\" />\n<title>", fp);
-	xmlencode(fp, name, strlen(name));
+	xmlencode(fp, stripped_name, strlen(stripped_name));
 	if (description[0])
 		fputs(" - ", fp);
 	xmlencode(fp, description, strlen(description));
@@ -251,7 +252,7 @@ writeheader(FILE *fp)
 	fprintf(fp, "<a href=\"../%s\"><img src=\"%slogo.png\" alt=\"\" width=\"32\" height=\"32\" /></a>",
 	        relpath, relpath);
 	fputs("</td><td><h1>", fp);
-	xmlencode(fp, name, strlen(name));
+	xmlencode(fp, stripped_name, strlen(stripped_name));
 	fputs("</h1><span class=\"desc\">", fp);
 	xmlencode(fp, description, strlen(description));
 	fputs("</span></td></tr>", fp);
@@ -553,9 +554,8 @@ writeatom(FILE *fp)
 
 	fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 	      "<feed xmlns=\"http://www.w3.org/2005/Atom\">\n<title>", fp);
-	xmlencode(fp, name, strlen(name));
-	fputs(", branch master</title>\n<subtitle>", fp);
-
+	xmlencode(fp, stripped_name, strlen(stripped_name));
+	fputs(", branch HEAD</title>\n<subtitle>", fp);
 	xmlencode(fp, description, strlen(description));
 	fputs("</subtitle>\n", fp);
 
@@ -914,9 +914,14 @@ main(int argc, char *argv[])
 	}
 
 	/* use directory name as name */
-	p = xbasename(repodir);
-	snprintf(name, sizeof(name), "%s", p);
-	free(p);
+	name = xbasename(repodir);
+
+	/* strip .git suffix */
+	if (!(stripped_name = strdup(name)))
+		err(1, "strdup");
+	if ((p = strrchr(stripped_name, '.')))
+		if (!strcmp(p, ".git"))
+			*p = '\0';
 
 	/* read description or .git/description */
 	snprintf(path, sizeof(path), "%s%s%s",
