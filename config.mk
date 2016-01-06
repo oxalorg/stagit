@@ -26,10 +26,5 @@ LDFLAGS = ${LIBS}
 #	-D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700 -D_BSD_SOURCE ${INCS}
 #LDFLAGS = -static -s ${LIBS}
 
-# uncomment for compat
-CFLAGS += -DCOMPAT
-# uncomment if your libc doesn't support reallocarray, strlcat, strlcpy.
-COMPATOBJ = reallocarray.o strlcat.o strlcpy.o
-
 # compiler and linker
 #CC = cc

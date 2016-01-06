@@ -21,6 +21,11 @@ DOC = \
 	TODO
 HDR = compat.h
 
+COMPATOBJ = \
+	reallocarray.o\
+	strlcat.o\
+	strlcpy.o
+
 OBJ = ${SRC:.c=.o} ${COMPATOBJ}
 
 all: $(BIN)
