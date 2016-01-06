@@ -36,6 +36,8 @@ table thead td {
 
 table td {
 	padding: 0 0.4em;
+	white-space: nowrap;
+	vertical-align: top;
 }
 
 #branches tr:hover td,
@@ -44,6 +46,13 @@ table td {
 #log tr:hover td,
 #files tr:hover td {
 	background-color: #eee;
+}
+
+#index tr td:nth-child(2),
+#tags tr td:nth-child(3),
+#branches tr td:nth-child(3),
+#log tr td:nth-child(2) {
+	white-space: normal;
 }
 
 td.num {
