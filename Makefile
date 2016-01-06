@@ -31,8 +31,9 @@ dist: $(BIN)
 	rm -rf release/${VERSION}
 	mkdir -p release/${VERSION}
 	cp -f ${MAN1} ${HDR} ${SCRIPTS} ${SRC} ${COMPATSRC} ${DOC} \
-		Makefile config.mk \
-		logo.png style.css \
+		Makefile config.def.h config.mk \
+		favicon.png logo.png style.css \
+		example.sh \
 		release/${VERSION}/
 	# make tarball
 	rm -f stagit-${VERSION}.tar.gz
@@ -62,7 +63,9 @@ install: all
 	# installing example files.
 	mkdir -p ${DESTDIR}${PREFIX}/share/${NAME}
 	cp -f style.css\
+		favicon.png\
 		logo.png\
+		example.sh\
 		README\
 		${DESTDIR}${PREFIX}/share/${NAME}
 	# installing manual pages.
@@ -76,7 +79,9 @@ uninstall:
 	# removing example files.
 	rm -f \
 		${DESTDIR}${PREFIX}/share/${NAME}/style.css\
+		${DESTDIR}${PREFIX}/share/${NAME}/favicon.png\
 		${DESTDIR}${PREFIX}/share/${NAME}/logo.png\
+		${DESTDIR}${PREFIX}/share/${NAME}/example.sh\
 		${DESTDIR}${PREFIX}/share/${NAME}/README
 	-rmdir ${DESTDIR}${PREFIX}/share/${NAME}
 	# removing manual pages.
