@@ -2,7 +2,7 @@
 
 # paths
 PREFIX = /usr/local
-MANPREFIX = ${PREFIX}/share/man
+MANPREFIX = ${PREFIX}/man
 
 GITINC = /usr/local/include
 GITLIB = /usr/local/lib
