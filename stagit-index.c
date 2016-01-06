@@ -124,6 +124,7 @@ writefooter(FILE *fp)
 int
 writelog(FILE *fp)
 {
+	char *stripped_name, *p;
 	git_commit *commit = NULL;
 	const git_signature *author;
 	git_revwalk *w = NULL;
@@ -146,7 +147,14 @@ writelog(FILE *fp)
 	fputs("<tr><td><a href=\"", fp);
 	xmlencode(fp, name, strlen(name));
 	fputs("/log.html\">", fp);
-	xmlencode(fp, name, strlen(name));
+
+	/* strip .git suffix */
+	if (!(stripped_name = strdup(name)))
+		err(1, "strdup");
+	if ((p = strrchr(stripped_name, '.')))
+		*p = '\0';
+	xmlencode(fp, stripped_name, strlen(stripped_name));
+
 	fputs("</a></td><td>", fp);
 	xmlencode(fp, description, strlen(description));
 	fputs("</td><td>", fp);
