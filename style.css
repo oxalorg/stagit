@@ -36,6 +36,9 @@ table thead td {
 
 table td {
 	padding: 0 0.4em;
+}
+
+#content table td {
 	white-space: nowrap;
 	vertical-align: top;
 }
