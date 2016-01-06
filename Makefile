@@ -6,6 +6,7 @@ SRC = \
 	stagit.c\
 	stagit-index.c
 COMPATSRC = \
+	reallocarray.c\
 	strlcat.c\
 	strlcpy.c
 BIN = \

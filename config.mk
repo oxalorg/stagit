@@ -28,8 +28,8 @@ LDFLAGS = ${LIBS}
 
 # uncomment for compat
 CFLAGS += -DCOMPAT
-# uncomment if your libc doesn't support strlcat, strlcpy.
-COMPATOBJ = strlcat.o strlcpy.o
+# uncomment if your libc doesn't support reallocarray, strlcat, strlcpy.
+COMPATOBJ = reallocarray.o strlcat.o strlcpy.o
 
 # compiler and linker
 #CC = cc
