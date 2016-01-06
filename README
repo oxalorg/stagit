@@ -28,7 +28,7 @@ Dependencies
 ------------
 
 - libgit2 (v0.22+).
-- libc (tested with OpenBSD, glibc and musl).
+- libc (tested with OpenBSD, FreeBSD, glibc and musl).
 - C compiler (C99).
 - make
 
