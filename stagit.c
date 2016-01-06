@@ -775,199 +775,140 @@ err:
 }
 
 int
-writebranches(FILE *fp)
+refs_cmp(const void *v1, const void *v2)
 {
-	struct commitinfo *ci;
-	git_branch_iterator *it = NULL;
-	git_branch_t branch;
-	git_reference *ref = NULL, *dref = NULL;
-	const git_oid *id = NULL;
-	const char *branchname = NULL;
-	size_t len;
-	int ret = -1;
+	git_reference *r1 = (*(git_reference **)v1);
+	git_reference *r2 = (*(git_reference **)v2);
+	int t1, t2;
 
-	/* log for local branches */
-	if (git_branch_iterator_new(&it, repo, GIT_BRANCH_LOCAL))
-		return -1;
+	t1 = git_reference_is_branch(r1);
+	t2 = git_reference_is_branch(r2);
 
-	fputs("<h2>Branches</h2><table id=\"branches\"><thead>\n<tr><td>Branch</td><td>Age</td>"
-		  "<td>Commit message</td>"
-		  "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
-		  "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
+	if (t1 != t2)
+		return t1 - t2;
 
-	while (!git_branch_next(&ref, &branch, it)) {
-		if (git_branch_name(&branchname, ref))
-			continue;
-
-		id = NULL;
-		switch (git_reference_type(ref)) {
-		case GIT_REF_SYMBOLIC:
-			if (git_reference_resolve(&dref, ref))
-				goto err;
-			id = git_reference_target(dref);
-			break;
-		case GIT_REF_OID:
-			id = git_reference_target(ref);
-			break;
-		default:
-			continue;
-		}
-		if (!id)
-			goto err;
-		if (!(ci = commitinfo_getbyoid(id)))
-			break;
-
-		relpath = "";
-
-		fputs("<tr><td>", fp);
-		xmlencode(fp, branchname, strlen(branchname));
-		fputs("</td><td>", fp);
-		if (ci->author)
-			printtimeshort(fp, &(ci->author->when));
-		fputs("</td><td>", fp);
-		if (ci->summary) {
-			if ((len = strlen(ci->summary)) > summarylen) {
-				xmlencode(fp, ci->summary, summarylen - 1);
-				fputs("…", fp);
-			} else {
-				xmlencode(fp, ci->summary, len);
-			}
-		}
-		fputs("</td><td>", fp);
-		if (ci->author)
-			xmlencode(fp, ci->author->name, strlen(ci->author->name));
-		fputs("</td><td class=\"num\">", fp);
-		fprintf(fp, "%zu", ci->filecount);
-		fputs("</td><td class=\"num\">", fp);
-		fprintf(fp, "+%zu", ci->addcount);
-		fputs("</td><td class=\"num\">", fp);
-		fprintf(fp, "-%zu", ci->delcount);
-		fputs("</td></tr>\n", fp);
-
-		relpath = "../";
-
-		commitinfo_free(ci);
-		git_reference_free(ref);
-		git_reference_free(dref);
-		ref = NULL;
-		dref = NULL;
-	}
-	ret = 0;
-
-err:
-	fputs("</tbody></table>", fp);
-	git_reference_free(ref);
-	git_reference_free(dref);
-	git_branch_iterator_free(it);
-
-	return ret;
-}
-
-int
-tagcompare(void *s1, void *s2)
-{
-	return strcmp(*(char **)s1, *(char **)s2);
-}
-
-int
-writetags(FILE *fp)
-{
-	struct commitinfo *ci;
-	git_strarray tagnames;
-	git_object *obj = NULL;
-	git_tag *tag = NULL;
-	const git_oid *id = NULL;
-	size_t i, len;
-
-	/* summary page with branches and tags */
-	memset(&tagnames, 0, sizeof(tagnames));
-	if (git_tag_list(&tagnames, repo))
-		return -1;
-	if (!tagnames.count) {
-		git_strarray_free(&tagnames);
-		return 0;
-	}
-
-	/* sort names */
-	qsort(tagnames.strings, tagnames.count, sizeof(char *),
-	      (int (*)(const void *, const void *))&tagcompare);
-
-	fputs("<h2>Tags</h2><table id=\"tags\"><thead>\n<tr><td>Tag</td>"
-	      "<td>Age</td><td>Commit message</td>"
-	      "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
-	      "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
-
-	for (i = 0; i < tagnames.count; i++) {
-		if (git_revparse_single(&obj, repo, tagnames.strings[i]))
-			continue;
-		id = git_object_id(obj);
-
-		/* lookup actual commit (from annotated tag etc) */
-		if (!git_tag_lookup(&tag, repo, id)) {
-			git_object_free(obj);
-			obj = NULL;
-			if (git_tag_peel(&obj, tag))
-				break;
-			git_tag_free(tag);
-			tag = NULL;
-			id = git_object_id(obj);
-		}
-
-		if (!(ci = commitinfo_getbyoid(id)))
-			break;
-
-		relpath = "";
-
-		fputs("<tr><td>", fp);
-		xmlencode(fp, tagnames.strings[i], strlen(tagnames.strings[i]));
-		fputs("</td><td>", fp);
-		if (ci->author)
-			printtimeshort(fp, &(ci->author->when));
-		fputs("</td><td>", fp);
-		if (ci->summary) {
-			fprintf(fp, "<a href=\"%scommit/%s.html\">", relpath, ci->oid);
-			if ((len = strlen(ci->summary)) > summarylen) {
-				xmlencode(fp, ci->summary, summarylen - 1);
-				fputs("…", fp);
-			} else {
-				xmlencode(fp, ci->summary, len);
-			}
-			fputs("</a>", fp);
-		}
-		fputs("</td><td>", fp);
-		if (ci->author)
-			xmlencode(fp, ci->author->name, strlen(ci->author->name));
-		fputs("</td><td class=\"num\">", fp);
-		fprintf(fp, "%zu", ci->filecount);
-		fputs("</td><td class=\"num\">", fp);
-		fprintf(fp, "+%zu", ci->addcount);
-		fputs("</td><td class=\"num\">", fp);
-		fprintf(fp, "-%zu", ci->delcount);
-		fputs("</td></tr>\n", fp);
-
-		relpath = "../";
-
-		commitinfo_free(ci);
-		git_object_free(obj);
-		obj = NULL;
-	}
-	fputs("</tbody></table>", fp);
-	git_strarray_free(&tagnames);
-	git_tag_free(tag);
-	git_object_free(obj);
-
-	return 0;
+	return strcmp(git_reference_shorthand(r1),
+	              git_reference_shorthand(r2));
 }
 
 int
 writerefs(FILE *fp)
 {
-	int ret;
+	struct commitinfo *ci;
+	const git_oid *id = NULL;
+	git_object *obj = NULL;
+	git_reference *dref = NULL, *r, *ref = NULL;
+	git_reference_iterator *it = NULL;
+	git_reference **refs = NULL;
+	size_t count, i, j, len, refcount = 0;
+	const char *cols[] = { "Branch", "Tag" }; /* first column title */
+	const char *titles[] = { "Branches", "Tags" };
+	const char *ids[] = { "branches", "tags" };
+	const char *name;
 
-	if ((ret = writebranches(fp)))
-		return ret;
-	fputs("<br/>", fp);
-	return writetags(fp);
+	if (git_reference_iterator_new(&it, repo))
+		return -1;
+
+	for (refcount = 0; !git_reference_next(&ref, it); refcount++) {
+		if (!(refs = reallocarray(refs, refcount + 1, sizeof(git_reference *))))
+			err(1, "realloc");
+		refs[refcount] = ref;
+	}
+	git_reference_iterator_free(it);
+
+	/* sort by type then shorthand name */
+	qsort(refs, refcount, sizeof(git_reference *), refs_cmp);
+
+	for (j = 0; j < 2; j++) {
+		for (i = 0, count = 0; i < refcount; i++) {
+			if (git_reference_is_branch(refs[i]) && j == 0)
+				;
+			else if (git_reference_is_tag(refs[i]) && j == 1)
+				;
+			else
+				continue;
+
+			id = NULL;
+			r = NULL;
+			switch (git_reference_type(refs[i])) {
+			case GIT_REF_SYMBOLIC:
+				if (git_reference_resolve(&dref, refs[i]))
+					goto err;
+				r = dref;
+				break;
+			case GIT_REF_OID:
+				r = refs[i];
+				break;
+			default:
+				continue;
+			}
+			if (!(id = git_reference_target(r)))
+				goto err;
+			if (git_reference_peel(&obj, r, GIT_OBJ_ANY))
+				goto err;
+			if (!(id = git_object_id(obj)))
+				goto err;
+			if (!(ci = commitinfo_getbyoid(id)))
+				break;
+
+			/* print header if it has an entry (first). */
+			if (++count == 1) {
+				fprintf(fp, "<h2>%s</h2><table id=\"%s\"><thead>\n<tr><td>%s</td>"
+				      "<td>Age</td><td>Commit message</td>"
+				      "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
+				      "<td class=\"num\">-</td></tr>\n</thead><tbody>\n",
+				      titles[j], ids[j], cols[j]);
+			}
+
+			relpath = "";
+			name = git_reference_shorthand(r);
+
+			fputs("<tr><td>", fp);
+			xmlencode(fp, name, strlen(name));
+			fputs("</td><td>", fp);
+			if (ci->author)
+				printtimeshort(fp, &(ci->author->when));
+			fputs("</td><td>", fp);
+			if (ci->summary) {
+				fprintf(fp, "<a href=\"%scommit/%s.html\">", relpath, ci->oid);
+				if ((len = strlen(ci->summary)) > summarylen) {
+					xmlencode(fp, ci->summary, summarylen - 1);
+					fputs("…", fp);
+				} else {
+					xmlencode(fp, ci->summary, len);
+				}
+				fputs("</a>", fp);
+			}
+			fputs("</td><td>", fp);
+			if (ci->author)
+				xmlencode(fp, ci->author->name, strlen(ci->author->name));
+			fputs("</td><td class=\"num\">", fp);
+			fprintf(fp, "%zu", ci->filecount);
+			fputs("</td><td class=\"num\">", fp);
+			fprintf(fp, "+%zu", ci->addcount);
+			fputs("</td><td class=\"num\">", fp);
+			fprintf(fp, "-%zu", ci->delcount);
+			fputs("</td></tr>\n", fp);
+
+			relpath = "../";
+
+			commitinfo_free(ci);
+			git_reference_free(dref);
+			dref = NULL;
+		}
+		/* table footer */
+		if (count)
+			fputs("</tbody></table>", fp);
+	}
+
+err:
+	git_reference_free(dref);
+
+	for (i = 0; i < refcount; i++)
+		git_reference_free(refs[i]);
+	free(refs);
+
+	return 0;
 }
 
 int
