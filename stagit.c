@@ -270,7 +270,7 @@ writeheader(FILE *fp)
 		fprintf(fp, " | <a href=\"%sfile/README.html\">README</a>", relpath);
 	if (haslicense)
 		fprintf(fp, " | <a href=\"%sfile/LICENSE.html\">LICENSE</a>", relpath);
-	fputs("</td></tr></table>\n<hr/><div id=\"content\">\n", fp);
+	fputs("</td></tr></table>\n<hr/>\n<div id=\"content\">\n", fp);
 
 	return 0;
 }
@@ -278,7 +278,7 @@ writeheader(FILE *fp)
 int
 writefooter(FILE *fp)
 {
-	return !fputs("</div></body>\n</html>", fp);
+	return !fputs("</div>\n</body>\n</html>\n", fp);
 }
 
 void
