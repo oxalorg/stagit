@@ -317,17 +317,6 @@ printcommit(FILE *fp, struct commitinfo *ci)
 		fprintf(fp, "<b>parent</b> <a href=\"%scommit/%s.html\">%s</a>\n",
 			relpath, ci->parentoid, ci->parentoid);
 
-#if 0
-	if ((count = (int)git_commit_parentcount(commit)) > 1) {
-		fputs("<b>Merge:</b>", fp);
-		for (i = 0; i < count; i++) {
-			git_oid_tostr(buf, 8, git_commit_parent_id(commit, i));
-			fprintf(fp, " <a href=\"%scommit/%s.html\">%s</a>",
-				relpath, buf, buf);
-		}
-		fputc('\n', fp);
-	}
-#endif
 	if (ci->author) {
 		fputs("<b>Author:</b> ", fp);
 		xmlencode(fp, ci->author->name, strlen(ci->author->name));
@@ -531,18 +520,6 @@ printcommitatom(FILE *fp, struct commitinfo *ci)
 	fprintf(fp, "commit %s\n", ci->oid);
 	if (ci->parentoid[0])
 		fprintf(fp, "parent %s\n", ci->parentoid);
-
-#if 0
-	if ((count = (int)git_commit_parentcount(commit)) > 1) {
-		fputs("Merge:", fp);
-		for (i = 0; i < count; i++) {
-			git_oid_tostr(buf, 8, git_commit_parent_id(commit, i));
-			fprintf(fp, " %s", buf);
-		}
-		fputc('\n', fp);
-	}
-#endif
-
 	if (ci->author) {
 		fputs("Author: ", fp);
 		xmlencode(fp, ci->author->name, strlen(ci->author->name));
@@ -821,15 +798,10 @@ writerefs(FILE *fp)
 
 	for (j = 0; j < 2; j++) {
 		for (i = 0, count = 0; i < refcount; i++) {
-			if (git_reference_is_branch(refs[i]) && j == 0)
-				;
-			else if (git_reference_is_tag(refs[i]) && j == 1)
-				;
-			else
+			if (!(git_reference_is_branch(refs[i]) && j == 0) &&
+			    !(git_reference_is_tag(refs[i]) && j == 1))
 				continue;
 
-			id = NULL;
-			r = NULL;
 			switch (git_reference_type(refs[i])) {
 			case GIT_REF_SYMBOLIC:
 				if (git_reference_resolve(&dref, refs[i]))
@@ -870,7 +842,8 @@ writerefs(FILE *fp)
 				printtimeshort(fp, &(ci->author->when));
 			fputs("</td><td>", fp);
 			if (ci->summary) {
-				fprintf(fp, "<a href=\"%scommit/%s.html\">", relpath, ci->oid);
+				fprintf(fp, "<a href=\"%scommit/%s.html\">",
+				        relpath, ci->oid);
 				if ((len = strlen(ci->summary)) > summarylen) {
 					xmlencode(fp, ci->summary, summarylen - 1);
 					fputs("…", fp);
