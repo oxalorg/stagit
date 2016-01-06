@@ -866,6 +866,8 @@ writerefs(FILE *fp)
 			relpath = "../";
 
 			commitinfo_free(ci);
+			git_object_free(obj);
+			obj = NULL;
 			git_reference_free(dref);
 			dref = NULL;
 		}
@@ -875,6 +877,7 @@ writerefs(FILE *fp)
 	}
 
 err:
+	git_object_free(obj);
 	git_reference_free(dref);
 
 	for (i = 0; i < refcount; i++)
