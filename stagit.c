@@ -628,7 +628,7 @@ writeblob(git_object *obj, const char *filename, git_off_t filesize)
 	writeheader(fp);
 	fputs("<p> ", fp);
 	xmlencode(fp, filename, strlen(filename));
-	fprintf(fp, " (%" PRIu32 "b)", filesize);
+	fprintf(fp, " (%jub)", filesize);
 	fputs("</p><hr/>", fp);
 
 	if (git_blob_is_binary((git_blob *)obj)) {
@@ -734,7 +734,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 		fputs(".html\">", fp);
 		xmlencode(fp, filename, strlen(filename));
 		fputs("</a></td><td class=\"num\">", fp);
-		fprintf(fp, "%" PRIu32, filesize);
+		fprintf(fp, "%ju", filesize);
 		fputs("</td></tr>\n", fp);
 
 		writeblob(obj, filename, filesize);
