@@ -875,6 +875,7 @@ writetags(FILE *fp)
 	struct commitinfo *ci;
 	git_strarray tagnames;
 	git_object *obj = NULL;
+	git_tag *tag = NULL;
 	const git_oid *id = NULL;
 	size_t i, len;
 
@@ -900,6 +901,18 @@ writetags(FILE *fp)
 		if (git_revparse_single(&obj, repo, tagnames.strings[i]))
 			continue;
 		id = git_object_id(obj);
+
+		/* lookup actual commit (from annotated tag etc) */
+		if (!git_tag_lookup(&tag, repo, id)) {
+			git_object_free(obj);
+			obj = NULL;
+			if (git_tag_peel(&obj, tag))
+				break;
+			git_tag_free(tag);
+			tag = NULL;
+			id = git_object_id(obj);
+		}
+
 		if (!(ci = commitinfo_getbyoid(id)))
 			break;
 
@@ -936,9 +949,12 @@ writetags(FILE *fp)
 
 		commitinfo_free(ci);
 		git_object_free(obj);
+		obj = NULL;
 	}
 	fputs("</tbody></table>", fp);
 	git_strarray_free(&tagnames);
+	git_tag_free(tag);
+	git_object_free(obj);
 
 	return 0;
 }
