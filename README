@@ -28,25 +28,26 @@ Dependencies
 ------------
 
 - libgit2 (v0.22+).
-- C compiler
+- libc (tested with OpenBSD, glibc and musl).
+- C compiler (C99).
 - make
 
 
 Documentation
 -------------
 
-$ man stagit
-$ man stagit-index
+See man pages: stagit(1) and stagit-index(1).
 
 
 Features
 --------
 
-- Log of all commits.
+- Log of all commits from HEAD.
 - Log and diffstat per commit.
 - Show file tree with linkable line numbers.
+- Show references: local branches and tags.
 - Detect README and LICENSE file from HEAD and link it as a webpage.
-- Atom feed log.
+- Atom feed log (atom.xml).
 - Make index page for multiple repositories with stagit-index.
 - After generating the pages (relatively slow) serving the files is very fast,
   simple and requires little resources (because the content is static), only
@@ -56,7 +57,16 @@ Features
 Cons
 ----
 
-- Not suitable for large repositories (2000+ commits).
-- Not suitable for repositories with many branches, a quite linear history is assumed.
-- Relatively slow to run the first time (about 3 seconds for sbase, 1500+ commits),
-  incremental updates after it are faster.
+- Not suitable for large repositories (2000+ commits), because diffstats are
+  an expensive operation.
+- Not suitable for repositories with many branches, a quite linear history is
+  assumed (from HEAD).
+- Relatively slow to run the first time (about 3 seconds for sbase,
+  1500+ commits), incremental updates after it are faster.
+- Does not support some of the dynamic features cgit has, like:
+  - snapshot tarballs.
+  - file tree per commit.
+  - history log of branches diverged from HEAD.
+  - stats (git shortlog -s).
+
+  this is by design, just use git locally.
