@@ -152,7 +152,8 @@ writelog(FILE *fp)
 	if (!(stripped_name = strdup(name)))
 		err(1, "strdup");
 	if ((p = strrchr(stripped_name, '.')))
-		*p = '\0';
+		if (!strcmp(p, ".git"))
+			*p = '\0';
 	xmlencode(fp, stripped_name, strlen(stripped_name));
 
 	fputs("</a></td><td>", fp);
