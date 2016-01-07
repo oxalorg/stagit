@@ -528,11 +528,12 @@ printcommitatom(FILE *fp, struct commitinfo *ci)
 		xmlencode(fp, ci->author->email, strlen(ci->author->email));
 		fputs("&gt;\nDate:   ", fp);
 		printtime(fp, &(ci->author->when));
+		fputc('\n', fp);
 	}
-	fputc('\n', fp);
-
-	if (ci->msg)
+	if (ci->msg) {
+		fputc('\n', fp);
 		xmlencode(fp, ci->msg, strlen(ci->msg));
+	}
 	fputs("\n</content>\n", fp);
 	if (ci->author) {
 		fputs("<author><name>", fp);
