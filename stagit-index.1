@@ -10,7 +10,10 @@
 .Sh DESCRIPTION
 .Nm
 will create an index HTML page for the repositories specified and writes
-the HTML data to stdout.
+the HTML data to stdout. The repos in the index are in the same order as
+the arguments
+.Ar repodir
+specified.
 .Pp
 The basename of the directory is used as the name. The suffix ".git" is
 removed from the basename, this is commonly used for "bare" repos.
