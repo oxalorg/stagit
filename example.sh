@@ -14,16 +14,28 @@
 
 set -e
 
-reposdir="/var/www/domains/git.codemadness.nl/home/src/"
+reposdir="/var/www/domains/git.codemadness.nl/home/src"
 curdir=$(pwd)
 
 # make index.
 cd "${reposdir}"
-find . -maxdepth 1 -type d | grep -v "^.$" | sort | xargs stagit-index > "${curdir}/index.html"
+find . -maxdepth 1 -type d | grep -v "^.$" | sort | xargs stagit-index |
+        sed 's@<td>Last commit</td>@<td><a href="index-time.html">Last commit</a></td>@g' | \
+        sed 's@<td>Name</td>@<td><a href="index.html">Name</a></td>@g' > "${curdir}/index.html"
+
+# make index (sort by last commit author time).
+find . -maxdepth 1 -type d | grep -v "^.$" | while read -r dir; do
+	d=$(basename "${dir}")
+	cd "${reposdir}/${d}"
+	timestamp=$(git show -s --pretty="format:%at" || true)
+
+	printf "%d %s\n" "${timestamp}" "${d}"
+done | sort -n -k 1 | cut -f 2- -d ' ' | xargs stagit-index | \
+	sed 's@<td>Last commit</td>@<td><a href="index-time.html">Last commit</a></td>@g' | \
+	sed 's@<td>Name</td>@<td><a href="index.html">Name</a></td>@g' > "${curdir}/index-time.html"
 
 # make files per repo.
 find . -maxdepth 1 -type d | grep -v "^.$" | sort | while read -r dir; do
-	cd "${reposdir}"
 	d=$(basename "${dir}")
 
 	printf "%s..." "${d}"
@@ -31,7 +43,7 @@ find . -maxdepth 1 -type d | grep -v "^.$" | sort | while read -r dir; do
 
 	test -d "${d}" || mkdir -p "${d}"
 	cd "${d}"
-	stagit "${reposdir}${d}"
+	stagit "${reposdir}/${d}"
 
 	printf " done\n"
 
