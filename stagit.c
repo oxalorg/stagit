@@ -329,12 +329,11 @@ printcommit(FILE *fp, struct commitinfo *ci)
 		printtime(fp, &(ci->author->when));
 		fputc('\n', fp);
 	}
-	fputc('\n', fp);
-
-	if (ci->msg)
+	if (ci->msg) {
+		fputc('\n', fp);
 		xmlencode(fp, ci->msg, strlen(ci->msg));
-
-	fputc('\n', fp);
+		fputc('\n', fp);
+	}
 }
 
 void
@@ -357,19 +356,18 @@ printshowfile(struct commitinfo *ci)
 
 	fp = efopen(path, "w");
 	writeheader(fp);
-	fputs("<pre>\n", fp);
+	fputs("<pre>", fp);
 	printcommit(fp, ci);
 
 	memset(&statsbuf, 0, sizeof(statsbuf));
 
 	/* diff stat */
-	if (ci->stats) {
-		if (!git_diff_stats_to_buf(&statsbuf, ci->stats,
-		    GIT_DIFF_STATS_FULL | GIT_DIFF_STATS_SHORT, 80)) {
-			if (statsbuf.ptr && statsbuf.ptr[0]) {
-				fputs("<b>Diffstat:</b>\n", fp);
-				fputs(statsbuf.ptr, fp);
-			}
+	if (ci->stats &&
+	    !git_diff_stats_to_buf(&statsbuf, ci->stats,
+                                   GIT_DIFF_STATS_FULL | GIT_DIFF_STATS_SHORT, 80)) {
+		if (statsbuf.ptr && statsbuf.ptr[0]) {
+			fputs("<b>Diffstat:</b>\n", fp);
+			xmlencode(fp, statsbuf.ptr, strlen(statsbuf.ptr));
 		}
 	}
 
@@ -430,20 +428,12 @@ printshowfile(struct commitinfo *ci)
 }
 
 int
-writelog(FILE *fp, const char *branch)
+writelog(FILE *fp, const git_oid *oid)
 {
 	struct commitinfo *ci;
-	const git_oid *oid;
 	git_revwalk *w = NULL;
-	git_object *obj = NULL;
 	git_oid id;
 	size_t len;
-
-	mkdir("commit", 0755);
-
-	if (git_revparse_single(&obj, repo, branch))
-		return -1;
-	oid = git_object_id(obj);
 
 	git_revwalk_new(&w, repo);
 	git_revwalk_push(w, oid);
@@ -493,7 +483,6 @@ writelog(FILE *fp, const char *branch)
 	fputs("</tbody></table>", fp);
 
 	git_revwalk_free(w);
-	git_object_free(obj);
 
 	relpath = "";
 
@@ -579,14 +568,13 @@ writeatom(FILE *fp)
 }
 
 int
-writeblob(git_object *obj, const char *filename, git_off_t filesize)
+writeblob(git_object *obj, const char *fpath, const char *filename, git_off_t filesize)
 {
-	char fpath[PATH_MAX];
 	char tmp[PATH_MAX] = "";
-	char *d, *p;
+	char *d;
+	const char *p;
 	FILE *fp;
 
-	snprintf(fpath, sizeof(fpath), "file/%s.html", filename);
 	d = xdirname(fpath);
 	if (mkdirp(d)) {
 		free(d);
@@ -698,35 +686,32 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 			git_object_free(obj);
 			continue;
 		}
-		if (path[0]) {
-			snprintf(filepath, sizeof(filepath), "%s/%s",
+		if (path[0])
+			snprintf(filepath, sizeof(filepath), "file/%s/%s.html",
 			         path, filename);
-			filename = filepath;
-		}
+		else
+			snprintf(filepath, sizeof(filepath), "file/%s.html",
+			         filename);
 		filesize = git_blob_rawsize((git_blob *)obj);
 
 		fputs("<tr><td>", fp);
-		fprintf(fp, "%s", filemode(git_tree_entry_filemode(entry)));
-		fprintf(fp, "</td><td><a href=\"%sfile/", relpath);
-		xmlencode(fp, filename, strlen(filename));
-		fputs(".html\">", fp);
+		fputs(filemode(git_tree_entry_filemode(entry)), fp);
+		fprintf(fp, "</td><td><a href=\"%s%s\">", relpath, filepath);
 		xmlencode(fp, filename, strlen(filename));
 		fputs("</a></td><td class=\"num\">", fp);
 		fprintf(fp, "%ju", (uintmax_t)filesize);
 		fputs("</td></tr>\n", fp);
 
-		writeblob(obj, filename, filesize);
+		writeblob(obj, filepath, filename, filesize);
 	}
 
 	return 0;
 }
 
 int
-writefiles(FILE *fp, const char *branch)
+writefiles(FILE *fp, const git_oid *id, const char *branch)
 {
-	const git_oid *id;
 	git_tree *tree = NULL;
-	git_object *obj = NULL;
 	git_commit *commit = NULL;
 	int ret = -1;
 
@@ -734,9 +719,6 @@ writefiles(FILE *fp, const char *branch)
 	      "<td>Mode</td><td>Name</td><td class=\"num\">Size</td>"
 	      "</tr>\n</thead><tbody>\n", fp);
 
-	if (git_revparse_single(&obj, repo, branch))
-		goto err;
-	id = git_object_id(obj);
 	if (git_commit_lookup(&commit, repo, id) ||
 	    git_commit_tree(&tree, commit))
 		goto err;
@@ -745,7 +727,6 @@ writefiles(FILE *fp, const char *branch)
 err:
 	fputs("</tbody></table>", fp);
 
-	git_object_free(obj);
 	git_commit_free(commit);
 	git_tree_free(tree);
 
@@ -778,7 +759,7 @@ writerefs(FILE *fp)
 	git_reference *dref = NULL, *r, *ref = NULL;
 	git_reference_iterator *it = NULL;
 	git_reference **refs = NULL;
-	size_t count, i, j, len, refcount = 0;
+	size_t count, i, j, refcount = 0;
 	const char *cols[] = { "Branch", "Tag" }; /* first column title */
 	const char *titles[] = { "Branches", "Tags" };
 	const char *ids[] = { "branches", "tags" };
@@ -827,9 +808,7 @@ writerefs(FILE *fp)
 			/* print header if it has an entry (first). */
 			if (++count == 1) {
 				fprintf(fp, "<h2>%s</h2><table id=\"%s\"><thead>\n<tr><td>%s</td>"
-				      "<td>Age</td><td>Commit message</td>"
-				      "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
-				      "<td class=\"num\">-</td></tr>\n</thead><tbody>\n",
+				      "<td>Age</td><td>Author</td>\n</tr>\n</thead><tbody>\n",
 				      titles[j], ids[j], cols[j]);
 			}
 
@@ -842,28 +821,8 @@ writerefs(FILE *fp)
 			if (ci->author)
 				printtimeshort(fp, &(ci->author->when));
 			fputs("</td><td>", fp);
-			if (ci->summary) {
-				if (j)
-					fprintf(fp, "<a href=\"%scommit/%s.html\">",
-					        relpath, ci->oid);
-				if ((len = strlen(ci->summary)) > summarylen) {
-					xmlencode(fp, ci->summary, summarylen - 1);
-					fputs("…", fp);
-				} else {
-					xmlencode(fp, ci->summary, len);
-				}
-				if (j)
-					fputs("</a>", fp);
-			}
-			fputs("</td><td>", fp);
 			if (ci->author)
 				xmlencode(fp, ci->author->name, strlen(ci->author->name));
-			fputs("</td><td class=\"num\">", fp);
-			fprintf(fp, "%zu", ci->filecount);
-			fputs("</td><td class=\"num\">", fp);
-			fprintf(fp, "+%zu", ci->addcount);
-			fputs("</td><td class=\"num\">", fp);
-			fprintf(fp, "-%zu", ci->delcount);
 			fputs("</td></tr>\n", fp);
 
 			relpath = "../";
@@ -876,7 +835,7 @@ writerefs(FILE *fp)
 		}
 		/* table footer */
 		if (count)
-			fputs("</tbody></table>", fp);
+			fputs("</tbody></table><br/>", fp);
 	}
 
 err:
@@ -894,6 +853,7 @@ int
 main(int argc, char *argv[])
 {
 	git_object *obj = NULL;
+	const git_oid *head = NULL;
 	const git_error *e = NULL;
 	FILE *fp, *fpread;
 	char path[PATH_MAX], *p;
@@ -913,6 +873,12 @@ main(int argc, char *argv[])
 		fprintf(stderr, "error %d/%d: %s\n", status, e->klass, e->message);
 		return status;
 	}
+
+	/* find HEAD */
+	if (git_revparse_single(&obj, repo, "HEAD"))
+		return 1;
+	head = git_object_id(obj);
+	git_object_free(obj);
 
 	/* use directory name as name */
 	name = xbasename(repodir);
@@ -964,14 +930,15 @@ main(int argc, char *argv[])
 	fp = efopen("log.html", "w");
 	relpath = "";
 	writeheader(fp);
-	writelog(fp, "HEAD");
+	mkdir("commit", 0755);
+	writelog(fp, head);
 	writefooter(fp);
 	fclose(fp);
 
 	/* files for HEAD */
 	fp = efopen("files.html", "w");
 	writeheader(fp);
-	writefiles(fp, "HEAD");
+	writefiles(fp, head, "HEAD");
 	writefooter(fp);
 	fclose(fp);
 
