@@ -34,10 +34,11 @@ done | sort -n -k 1 | cut -f 2- -d ' ' | xargs stagit-index | \
 	sed 's@<td>Last commit</td>@<td><a href="index-time.html">Last commit</a></td>@g' | \
 	sed 's@<td>Name</td>@<td><a href="index.html">Name</a></td>@g' > "${curdir}/index-time.html"
 
+cd "${reposdir}"
+
 # make files per repo.
 find . -maxdepth 1 -type d | grep -v "^.$" | sort | while read -r dir; do
 	d=$(basename "${dir}")
-
 	printf "%s..." "${d}"
 	cd "${curdir}"
 
