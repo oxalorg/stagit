@@ -598,7 +598,7 @@ writeblob(git_object *obj, const char *fpath, const char *filename, git_off_t fi
 	writeheader(fp);
 	fputs("<p> ", fp);
 	xmlencode(fp, filename, strlen(filename));
-	fprintf(fp, " (%jub)", (uintmax_t)filesize);
+	fprintf(fp, " (%juB)", (uintmax_t)filesize);
 	fputs("</p><hr/>", fp);
 
 	if (git_blob_is_binary((git_blob *)obj)) {
@@ -708,7 +708,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 		if (showlinecount && lc > 0)
 			fprintf(fp, "%dL", lc);
 		else
-			fprintf(fp, "%jub", (uintmax_t)filesize);
+			fprintf(fp, "%juB", (uintmax_t)filesize);
 		fputs("</td></tr>\n", fp);
 	}
 
