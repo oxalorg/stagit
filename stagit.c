@@ -282,11 +282,11 @@ writefooter(FILE *fp)
 	return !fputs("</div>\n</body>\n</html>\n", fp);
 }
 
-void
+int
 writeblobhtml(FILE *fp, const git_blob *blob)
 {
 	off_t i;
-	size_t n = 1;
+	size_t n = 0;
 	char *nfmt = "<a href=\"#l%d\" id=\"l%d\">%d</a>\n";
 	const char *s = git_blob_rawcontent(blob);
 	git_off_t len = git_blob_rawsize(blob);
@@ -294,6 +294,7 @@ writeblobhtml(FILE *fp, const git_blob *blob)
 	fputs("<table id=\"blob\"><tr><td class=\"num\"><pre>\n", fp);
 
 	if (len) {
+		n++;
 		fprintf(fp, nfmt, n, n, n);
 		for (i = 0; i < len - 1; i++) {
 			if (s[i] == '\n') {
@@ -306,6 +307,8 @@ writeblobhtml(FILE *fp, const git_blob *blob)
 	fputs("</pre></td><td><pre>\n", fp);
 	xmlencode(fp, s, (size_t)len);
 	fputs("</pre></td></tr></table>\n", fp);
+
+	return n;
 }
 
 void
@@ -573,12 +576,13 @@ writeblob(git_object *obj, const char *fpath, const char *filename, git_off_t fi
 	char tmp[PATH_MAX] = "";
 	char *d;
 	const char *p;
+	int lc = 0;
 	FILE *fp;
 
 	d = xdirname(fpath);
 	if (mkdirp(d)) {
 		free(d);
-		return 1;
+		return -1;
 	}
 	free(d);
 
@@ -600,7 +604,7 @@ writeblob(git_object *obj, const char *fpath, const char *filename, git_off_t fi
 	if (git_blob_is_binary((git_blob *)obj)) {
 		fputs("<p>Binary file</p>\n", fp);
 	} else {
-		writeblobhtml(fp, (git_blob *)obj);
+		lc = writeblobhtml(fp, (git_blob *)obj);
 		if (ferror(fp))
 			err(1, "fwrite");
 	}
@@ -609,7 +613,7 @@ writeblob(git_object *obj, const char *fpath, const char *filename, git_off_t fi
 
 	relpath = "";
 
-	return 0;
+	return lc;
 }
 
 const char *
@@ -663,7 +667,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 	git_object *obj = NULL;
 	git_off_t filesize;
 	size_t count, i;
-	int ret;
+	int lc, ret;
 
 	count = git_tree_entrycount(tree);
 	for (i = 0; i < count; i++) {
@@ -694,15 +698,18 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 			         filename);
 		filesize = git_blob_rawsize((git_blob *)obj);
 
+		lc = writeblob(obj, filepath, filename, filesize);
+
 		fputs("<tr><td>", fp);
 		fputs(filemode(git_tree_entry_filemode(entry)), fp);
 		fprintf(fp, "</td><td><a href=\"%s%s\">", relpath, filepath);
 		xmlencode(fp, filename, strlen(filename));
 		fputs("</a></td><td class=\"num\">", fp);
-		fprintf(fp, "%ju", (uintmax_t)filesize);
+		if (showlinecount && lc > 0)
+			fprintf(fp, "%dL", lc);
+		else
+			fprintf(fp, "%jub", (uintmax_t)filesize);
 		fputs("</td></tr>\n", fp);
-
-		writeblob(obj, filepath, filename, filesize);
 	}
 
 	return 0;
