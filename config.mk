@@ -13,7 +13,7 @@ LIBS = -L${GITLIB} -lgit2 -lc
 
 # debug
 CFLAGS = -fstack-protector-all -O0 -g -std=c99 -Wall -Wextra -pedantic \
-	-D_XOPEN_SOURCE=700 -D_BSD_SOURCE ${INCS}
+	-D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -D_BSD_SOURCE ${INCS}
 LDFLAGS = ${LIBS}
 
 # optimized
