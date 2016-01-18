@@ -662,8 +662,8 @@ int
 writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 {
 	const git_tree_entry *entry = NULL;
-	const char *filename;
-	char filepath[PATH_MAX];
+	const char *entryname;
+	char filepath[PATH_MAX], entrypath[PATH_MAX];
 	git_object *obj = NULL;
 	git_off_t filesize;
 	size_t count, i;
@@ -674,14 +674,16 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 		if (!(entry = git_tree_entry_byindex(tree, i)) ||
 		    git_tree_entry_to_object(&obj, repo, entry))
 			return -1;
-		filename = git_tree_entry_name(entry);
+		entryname = git_tree_entry_name(entry);
+		snprintf(entrypath, sizeof(entrypath), "%s%s%s",
+			 path, path[0] ? "/" : "", entryname);
 		switch (git_object_type(obj)) {
 		case GIT_OBJ_BLOB:
 			break;
 		case GIT_OBJ_TREE:
 			/* NOTE: recurses */
 			ret = writefilestree(fp, (git_tree *)obj, branch,
-			                     filename);
+			                     entrypath);
 			git_object_free(obj);
 			if (ret)
 				return ret;
@@ -692,18 +694,18 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 		}
 		if (path[0])
 			snprintf(filepath, sizeof(filepath), "file/%s/%s.html",
-			         path, filename);
+			         path, entryname);
 		else
 			snprintf(filepath, sizeof(filepath), "file/%s.html",
-			         filename);
+			         entryname);
 		filesize = git_blob_rawsize((git_blob *)obj);
 
-		lc = writeblob(obj, filepath, filename, filesize);
+		lc = writeblob(obj, filepath, entryname, filesize);
 
 		fputs("<tr><td>", fp);
 		fputs(filemode(git_tree_entry_filemode(entry)), fp);
 		fprintf(fp, "</td><td><a href=\"%s%s\">", relpath, filepath);
-		xmlencode(fp, filename, strlen(filename));
+		xmlencode(fp, entrypath, strlen(entrypath));
 		fputs("</a></td><td class=\"num\">", fp);
 		if (showlinecount && lc > 0)
 			fprintf(fp, "%dL", lc);
