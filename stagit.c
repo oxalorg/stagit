@@ -154,7 +154,7 @@ xdirname(const char *path)
 	if (!(p = strdup(path)))
 		err(1, "strdup");
 	if (!(b = dirname(p)))
-		err(1, "basename");
+		err(1, "dirname");
 	if (!(b = strdup(b)))
 		err(1, "strdup");
 	free(p);
