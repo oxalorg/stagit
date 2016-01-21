@@ -769,7 +769,6 @@ writerefs(FILE *fp)
 	git_reference_iterator *it = NULL;
 	git_reference **refs = NULL;
 	size_t count, i, j, refcount = 0;
-	const char *cols[] = { "Branch", "Tag" }; /* first column title */
 	const char *titles[] = { "Branches", "Tags" };
 	const char *ids[] = { "branches", "tags" };
 	const char *name;
@@ -816,9 +815,9 @@ writerefs(FILE *fp)
 
 			/* print header if it has an entry (first). */
 			if (++count == 1) {
-				fprintf(fp, "<h2>%s</h2><table id=\"%s\"><thead>\n<tr><td>%s</td>"
+				fprintf(fp, "<h2>%s</h2><table id=\"%s\"><thead>\n<tr><td>Name</td>"
 				      "<td>Last commit date</td><td>Author</td>\n</tr>\n</thead><tbody>\n",
-				      titles[j], ids[j], cols[j]);
+				      titles[j], ids[j]);
 			}
 
 			relpath = "";
