@@ -443,7 +443,7 @@ writelog(FILE *fp, const git_oid *oid)
 	git_revwalk_sorting(w, GIT_SORT_TIME);
 	git_revwalk_simplify_first_parent(w);
 
-	fputs("<table id=\"log\"><thead>\n<tr><td>Age</td><td>Commit message</td>"
+	fputs("<table id=\"log\"><thead>\n<tr><td>Date</td><td>Commit message</td>"
 		  "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
 		  "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
 
@@ -817,7 +817,7 @@ writerefs(FILE *fp)
 			/* print header if it has an entry (first). */
 			if (++count == 1) {
 				fprintf(fp, "<h2>%s</h2><table id=\"%s\"><thead>\n<tr><td>%s</td>"
-				      "<td>Age</td><td>Author</td>\n</tr>\n</thead><tbody>\n",
+				      "<td>Last commit date</td><td>Author</td>\n</tr>\n</thead><tbody>\n",
 				      titles[j], ids[j], cols[j]);
 			}
 
