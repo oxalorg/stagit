@@ -340,7 +340,7 @@ printcommit(FILE *fp, struct commitinfo *ci)
 }
 
 void
-printshowfile(struct commitinfo *ci)
+printshowfile(FILE *fp, struct commitinfo *ci)
 {
 	const git_diff_delta *delta;
 	const git_diff_hunk *hunk;
@@ -348,18 +348,8 @@ printshowfile(struct commitinfo *ci)
 	git_patch *patch;
 	git_buf statsbuf;
 	size_t ndeltas, nhunks, nhunklines;
-	FILE *fp;
 	size_t i, j, k;
-	char path[PATH_MAX];
 
-	snprintf(path, sizeof(path), "commit/%s.html", ci->oid);
-	/* check if file exists if so skip it */
-	if (!access(path, F_OK))
-		return;
-
-	fp = efopen(path, "w");
-	writeheader(fp);
-	fputs("<pre>", fp);
 	printcommit(fp, ci);
 
 	memset(&statsbuf, 0, sizeof(statsbuf));
@@ -424,9 +414,6 @@ printshowfile(struct commitinfo *ci)
 	}
 	git_buf_free(&statsbuf);
 
-	fputs("</pre>\n", fp);
-	writefooter(fp);
-	fclose(fp);
 	return;
 }
 
@@ -437,6 +424,8 @@ writelog(FILE *fp, const git_oid *oid)
 	git_revwalk *w = NULL;
 	git_oid id;
 	size_t len;
+	char path[PATH_MAX];
+	FILE *fpfile;
 
 	git_revwalk_new(&w, repo);
 	git_revwalk_push(w, oid);
@@ -479,8 +468,18 @@ writelog(FILE *fp, const git_oid *oid)
 		fputs("</td></tr>\n", fp);
 
 		relpath = "../";
-		printshowfile(ci);
 
+		snprintf(path, sizeof(path), "commit/%s.html", ci->oid);
+		/* check if file exists if so skip it */
+		if (access(path, F_OK)) {
+			fpfile = efopen(path, "w");
+			writeheader(fpfile);
+			fputs("<pre>", fpfile);
+			printshowfile(fpfile, ci);
+			fputs("</pre>\n", fpfile);
+			writefooter(fpfile);
+			fclose(fpfile);
+		}
 		commitinfo_free(ci);
 	}
 	fputs("</tbody></table>", fp);
