@@ -507,6 +507,16 @@ printcommitatom(FILE *fp, struct commitinfo *ci)
 		xmlencode(fp, ci->summary, strlen(ci->summary));
 		fputs("</title>\n", fp);
 	}
+	fprintf(fp, "<link rel=\"alternate\" type=\"text/html\" href=\"commit/%s.html\" />",
+	        ci->oid);
+
+	if (ci->author) {
+		fputs("<author><name>", fp);
+		xmlencode(fp, ci->author->name, strlen(ci->author->name));
+		fputs("</name>\n<email>", fp);
+		xmlencode(fp, ci->author->email, strlen(ci->author->email));
+		fputs("</email>\n</author>\n", fp);
+	}
 
 	fputs("<content type=\"text\">", fp);
 	fprintf(fp, "commit %s\n", ci->oid);
@@ -526,13 +536,7 @@ printcommitatom(FILE *fp, struct commitinfo *ci)
 		xmlencode(fp, ci->msg, strlen(ci->msg));
 	}
 	fputs("\n</content>\n", fp);
-	if (ci->author) {
-		fputs("<author><name>", fp);
-		xmlencode(fp, ci->author->name, strlen(ci->author->name));
-		fputs("</name>\n<email>", fp);
-		xmlencode(fp, ci->author->email, strlen(ci->author->email));
-		fputs("</email>\n</author>\n", fp);
-	}
+
 	fputs("</entry>\n", fp);
 }
 
