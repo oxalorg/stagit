@@ -1,5 +1,3 @@
-check path truncation? snprintf(), strlcpy.
-
 performance:
 - optimize git_diff_get_stats.
 - speed up generating files.

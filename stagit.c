@@ -188,7 +188,8 @@ mkdirp(const char *path)
 {
 	char tmp[PATH_MAX], *p;
 
-	strlcpy(tmp, path, sizeof(tmp));
+	if (strlcpy(tmp, path, sizeof(tmp)) >= sizeof(tmp))
+		errx(1, "path truncated: '%s'", path);
 	for (p = tmp + (tmp[0] == '/'); *p; p++) {
 		if (*p != '/')
 			continue;
@@ -426,6 +427,7 @@ writelog(FILE *fp, const git_oid *oid)
 	size_t len;
 	char path[PATH_MAX];
 	FILE *fpfile;
+	int r;
 
 	git_revwalk_new(&w, repo);
 	git_revwalk_push(w, oid);
@@ -469,7 +471,10 @@ writelog(FILE *fp, const git_oid *oid)
 
 		relpath = "../";
 
-		snprintf(path, sizeof(path), "commit/%s.html", ci->oid);
+		r = snprintf(path, sizeof(path), "commit/%s.html", ci->oid);
+		if (r == -1 || (size_t)r >= sizeof(path))
+			errx(1, "path truncated: 'commit/%s.html'", ci->oid);
+
 		/* check if file exists if so skip it */
 		if (access(path, F_OK)) {
 			fpfile = efopen(path, "w");
@@ -591,8 +596,8 @@ writeblob(git_object *obj, const char *fpath, const char *filename, git_off_t fi
 
 	p = fpath;
 	while (*p) {
-		if (*p == '/')
-			strlcat(tmp, "../", sizeof(tmp));
+		if (*p == '/' && strlcat(tmp, "../", sizeof(tmp)) >= sizeof(tmp))
+			errx(1, "path truncated: '../%s'", tmp);
 		p++;
 	}
 	relpath = tmp;
@@ -670,7 +675,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 	git_object *obj = NULL;
 	git_off_t filesize;
 	size_t count, i;
-	int lc, ret;
+	int lc, r, ret;
 
 	count = git_tree_entrycount(tree);
 	for (i = 0; i < count; i++) {
@@ -678,8 +683,11 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 		    git_tree_entry_to_object(&obj, repo, entry))
 			return -1;
 		entryname = git_tree_entry_name(entry);
-		snprintf(entrypath, sizeof(entrypath), "%s%s%s",
+		r = snprintf(entrypath, sizeof(entrypath), "%s%s%s",
 			 path, path[0] ? "/" : "", entryname);
+		if (r == -1 || (size_t)r >= sizeof(entrypath))
+			errx(1, "path truncated: '%s%s%s'",
+			        path, path[0] ? "/" : "", entryname);
 		switch (git_object_type(obj)) {
 		case GIT_OBJ_BLOB:
 			break;
@@ -695,12 +703,13 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 			git_object_free(obj);
 			continue;
 		}
-		if (path[0])
-			snprintf(filepath, sizeof(filepath), "file/%s/%s.html",
-			         path, entryname);
-		else
-			snprintf(filepath, sizeof(filepath), "file/%s.html",
-			         entryname);
+
+		r = snprintf(filepath, sizeof(filepath), "file/%s%s%s.html",
+		         path, path[0] ? "/" : "", entryname);
+		if (r == -1 || (size_t)r >= sizeof(filepath))
+			errx(1, "path truncated: 'file/%s%s%s.html'",
+			        path, path[0] ? "/" : "", entryname);
+
 		filesize = git_blob_rawsize((git_blob *)obj);
 
 		lc = writeblob(obj, filepath, entryname, filesize);
@@ -868,7 +877,7 @@ main(int argc, char *argv[])
 	const git_error *e = NULL;
 	FILE *fp, *fpread;
 	char path[PATH_MAX], *p;
-	int status;
+	int r, status;
 
 	if (argc != 2) {
 		fprintf(stderr, "%s <repodir>\n", argv[0]);
@@ -902,11 +911,17 @@ main(int argc, char *argv[])
 			*p = '\0';
 
 	/* read description or .git/description */
-	snprintf(path, sizeof(path), "%s%s%s",
+	r = snprintf(path, sizeof(path), "%s%s%s",
 		repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "description");
+	if (r == -1 || (size_t)r >= sizeof(path))
+		errx(1, "path truncated: '%s%s%s'",
+	                repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "description");
 	if (!(fpread = fopen(path, "r"))) {
-		snprintf(path, sizeof(path), "%s%s%s",
+		r = snprintf(path, sizeof(path), "%s%s%s",
 			repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/description");
+		if (r == -1 || (size_t)r >= sizeof(path))
+			errx(1, "path truncated: '%s%s%s'",
+		                repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/description");
 		fpread = fopen(path, "r");
 	}
 	if (fpread) {
@@ -916,11 +931,17 @@ main(int argc, char *argv[])
 	}
 
 	/* read url or .git/url */
-	snprintf(path, sizeof(path), "%s%s%s",
+	r = snprintf(path, sizeof(path), "%s%s%s",
 		repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "url");
+	if (r == -1 || (size_t)r >= sizeof(path))
+		errx(1, "path truncated: '%s%s%s'",
+		        repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "url");
 	if (!(fpread = fopen(path, "r"))) {
-		snprintf(path, sizeof(path), "%s%s%s",
+		r = snprintf(path, sizeof(path), "%s%s%s",
 			repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/url");
+		if (r == -1 || (size_t)r >= sizeof(path))
+			errx(1, "path truncated: '%s%s%s'",
+			        repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/url");
 		fpread = fopen(path, "r");
 	}
 	if (fpread) {

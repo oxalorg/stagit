@@ -178,7 +178,7 @@ main(int argc, char *argv[])
 	const git_error *e = NULL;
 	FILE *fp;
 	char path[PATH_MAX], *p;
-	int i, ret = 0;
+	int i, r, ret = 0;
 
 	if (argc < 2) {
 		fprintf(stderr, "%s [repodir...]\n", argv[0]);
@@ -199,18 +199,24 @@ main(int argc, char *argv[])
 			continue;
 		}
 
-		/* use directory name as name */
+		/* use directory name as name, truncation of name is no problem. */
 		p = xbasename(repodir);
 		snprintf(name, sizeof(name), "%s", p);
 		free(p);
 
 		/* read description or .git/description */
 		description[0] = '\0';
-		snprintf(path, sizeof(path), "%s%s%s",
+		r = snprintf(path, sizeof(path), "%s%s%s",
 			repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "description");
+		if (r == -1 || (size_t)r >= sizeof(path))
+			errx(1, "path truncated: '%s%s%s'",
+			        repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "description");
 		if (!(fp = fopen(path, "r"))) {
-			snprintf(path, sizeof(path), "%s%s%s",
+			r = snprintf(path, sizeof(path), "%s%s%s",
 				repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/description");
+			if (r == -1 || (size_t)r >= sizeof(path))
+				errx(1, "path truncated: '%s%s%s'",
+				        repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/description");
 			fp = fopen(path, "r");
 		}
 		if (fp) {
@@ -221,11 +227,17 @@ main(int argc, char *argv[])
 
 		/* read owner or .git/owner */
 		owner[0] = '\0';
-		snprintf(path, sizeof(path), "%s%s%s",
+		r = snprintf(path, sizeof(path), "%s%s%s",
 			repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "owner");
+		if (r == -1 || (size_t)r >= sizeof(path))
+			errx(1, "path truncated: '%s%s%s'",
+			        repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "owner");
 		if (!(fp = fopen(path, "r"))) {
-			snprintf(path, sizeof(path), "%s%s%s",
+			r = snprintf(path, sizeof(path), "%s%s%s",
 				repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/owner");
+			if (r == -1 || (size_t)r >= sizeof(path))
+				errx(1, "path truncated: '%s%s%s'",
+				        repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/owner");
 			fp = fopen(path, "r");
 		}
 		if (fp) {
