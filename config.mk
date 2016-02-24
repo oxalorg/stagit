@@ -18,12 +18,12 @@ LDFLAGS = ${LIBS}
 
 # optimized
 #CFLAGS = -O2 -std=c99 \
-#	-D_XOPEN_SOURCE=700 -D_BSD_SOURCE ${INCS}
+#	-D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -D_BSD_SOURCE ${INCS}
 #LDFLAGS = -s ${LIBS}
 
 # optimized static
 #CFLAGS = -static -O2 -std=c99 \
-#	-D_XOPEN_SOURCE=700 -D_BSD_SOURCE ${INCS}
+#	-D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -D_BSD_SOURCE ${INCS}
 #LDFLAGS = -static -s ${LIBS}
 
 # compiler and linker
