@@ -435,7 +435,7 @@ writelog(FILE *fp, const git_oid *oid)
 	git_revwalk_simplify_first_parent(w);
 
 	fputs("<table id=\"log\"><thead>\n<tr><td>Date</td><td>Commit message</td>"
-		  "<td>Author</td><td>Files</td><td class=\"num\">+</td>"
+		  "<td>Author</td><td class=\"num\">Files</td><td class=\"num\">+</td>"
 		  "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
 
 	while (!git_revwalk_next(&id, w)) {
