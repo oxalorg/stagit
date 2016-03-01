@@ -76,15 +76,15 @@ pre {
 }
 
 pre a.h {
-	color: darkblue;
+	color: #00a;
 }
 
 pre a.i {
-	color: green;
+	color: #070;
 }
 
 pre a.d {
-	color: red;
+	color: #e00;
 }
 
 pre a.h:hover,
