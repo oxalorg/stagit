@@ -235,12 +235,15 @@ printtimeshort(FILE *fp, const git_time *intime)
 }
 
 int
-writeheader(FILE *fp)
+writeheader(FILE *fp, const char *title)
 {
 	fputs("<!DOCTYPE html>\n"
 		"<html dir=\"ltr\" lang=\"en\">\n<head>\n"
 		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n"
 		"<meta http-equiv=\"Content-Language\" content=\"en\" />\n<title>", fp);
+	xmlencode(fp, title, strlen(title));
+	if (title[0] && stripped_name[0])
+		fputs(" - ", fp);
 	xmlencode(fp, stripped_name, strlen(stripped_name));
 	if (description[0])
 		fputs(" - ", fp);
@@ -478,7 +481,7 @@ writelog(FILE *fp, const git_oid *oid)
 		/* check if file exists if so skip it */
 		if (access(path, F_OK)) {
 			fpfile = efopen(path, "w");
-			writeheader(fpfile);
+			writeheader(fpfile, ci->summary);
 			fputs("<pre>", fpfile);
 			printshowfile(fpfile, ci);
 			fputs("</pre>\n", fpfile);
@@ -603,7 +606,7 @@ writeblob(git_object *obj, const char *fpath, const char *filename, git_off_t fi
 	relpath = tmp;
 
 	fp = efopen(fpath, "w");
-	writeheader(fp);
+	writeheader(fp, filename);
 	fputs("<p> ", fp);
 	xmlencode(fp, filename, strlen(filename));
 	fprintf(fp, " (%juB)", (uintmax_t)filesize);
@@ -961,7 +964,7 @@ main(int argc, char *argv[])
 	/* log for HEAD */
 	fp = efopen("log.html", "w");
 	relpath = "";
-	writeheader(fp);
+	writeheader(fp, "Log");
 	mkdir("commit", 0755);
 	writelog(fp, head);
 	writefooter(fp);
@@ -969,14 +972,14 @@ main(int argc, char *argv[])
 
 	/* files for HEAD */
 	fp = efopen("files.html", "w");
-	writeheader(fp);
+	writeheader(fp, "Files");
 	writefiles(fp, head, "HEAD");
 	writefooter(fp);
 	fclose(fp);
 
 	/* summary page with branches and tags */
 	fp = efopen("refs.html", "w");
-	writeheader(fp);
+	writeheader(fp, "Refs");
 	writerefs(fp);
 	writefooter(fp);
 	fclose(fp);
