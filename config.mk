@@ -12,19 +12,17 @@ INCS = -I${GITINC}
 LIBS = -L${GITLIB} -lgit2 -lc
 
 # debug
-CFLAGS = -fstack-protector-all -O0 -g -std=c99 -Wall -Wextra -pedantic \
-	-D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -D_BSD_SOURCE ${INCS}
-LDFLAGS = ${LIBS}
+#CFLAGS = -fstack-protector-all -O0 -g -std=c99 -Wall -Wextra -pedantic ${INCS}
+#LDFLAGS = ${LIBS}
 
 # optimized
-#CFLAGS = -O2 -std=c99 \
-#	-D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -D_BSD_SOURCE ${INCS}
-#LDFLAGS = -s ${LIBS}
+CFLAGS = -O2 -std=c99 ${INCS}
+LDFLAGS = -s ${LIBS}
 
 # optimized static
-#CFLAGS = -static -O2 -std=c99 \
-#	-D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -D_BSD_SOURCE ${INCS}
+#CFLAGS = -static -O2 -std=c99 ${INCS}
 #LDFLAGS = -static -s ${LIBS}
 
+CPPFLAGS= -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -D_BSD_SOURCE ${INCS}
 # compiler and linker
 #CC = cc

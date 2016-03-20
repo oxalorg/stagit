@@ -1,7 +1,7 @@
 include config.mk
 
 NAME = stagit
-VERSION = 0.3
+VERSION = 0.3.1
 SRC = \
 	stagit.c\
 	stagit-index.c
@@ -30,8 +30,11 @@ OBJ = ${SRC:.c=.o} ${COMPATOBJ}
 
 all: $(BIN)
 
+.o:
+	${CC} ${LDFLAGS} -o $@ ${LIBS}
+
 .c.o:
-	${CC} -c ${CFLAGS} $<
+	${CC} -c ${CFLAGS} ${CPPFLAGS} -o $@ -c $<
 
 dist:
 	rm -rf stagit-${VERSION}
