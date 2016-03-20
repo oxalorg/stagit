@@ -37,17 +37,17 @@ all: $(BIN)
 	${CC} -c ${CFLAGS} ${CPPFLAGS} -o $@ -c $<
 
 dist:
-	rm -rf stagit-${VERSION}
-	mkdir -p stagit-${VERSION}
+	rm -rf ${NAME}-${VERSION}
+	mkdir -p ${NAME}-${VERSION}
 	cp -f ${MAN1} ${HDR} ${SCRIPTS} ${SRC} ${COMPATSRC} ${DOC} \
 		Makefile config.def.h config.mk \
 		favicon.png logo.png style.css \
 		example.sh \
-		stagit-${VERSION}
+		${NAME}-${VERSION}
 	# make tarball
-	tar -cf - stagit-${VERSION} | \
-		gzip -c > stagit-${VERSION}.tar.gz
-	rm -rf stagit-${VERSION}
+	tar -cf - ${NAME}-${VERSION} | \
+		gzip -c > ${NAME}-${VERSION}.tar.gz
+	rm -rf ${NAME}-${VERSION}
 
 ${OBJ}: config.h config.mk ${HDR}
 
