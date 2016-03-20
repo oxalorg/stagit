@@ -1,7 +1,7 @@
 include config.mk
 
 NAME = stagit
-VERSION = 0.4
+VERSION = 0.3
 SRC = \
 	stagit.c\
 	stagit-index.c
@@ -33,18 +33,18 @@ all: $(BIN)
 .c.o:
 	${CC} -c ${CFLAGS} $<
 
-dist: $(BIN)
-	rm -rf release/${VERSION}
-	mkdir -p release/${VERSION}
+dist:
+	rm -rf stagit-${VERSION}
+	mkdir -p stagit-${VERSION}
 	cp -f ${MAN1} ${HDR} ${SCRIPTS} ${SRC} ${COMPATSRC} ${DOC} \
 		Makefile config.def.h config.mk \
 		favicon.png logo.png style.css \
 		example.sh \
-		release/${VERSION}/
+		stagit-${VERSION}
 	# make tarball
-	rm -f stagit-${VERSION}.tar.gz
-	(cd release/${VERSION}; \
-	tar -czf ../../stagit-${VERSION}.tar.gz .)
+	tar -cf - stagit-${VERSION} | \
+		gzip -c > stagit-${VERSION}.tar.gz
+	rm -rf stagit-${VERSION}
 
 ${OBJ}: config.h config.mk ${HDR}
 
