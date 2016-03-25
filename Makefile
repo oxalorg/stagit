@@ -62,7 +62,7 @@ stagit-index: stagit-index.o ${COMPATOBJ}
 	${CC} -o $@ stagit-index.o ${COMPATOBJ} ${LDFLAGS}
 
 clean:
-	rm -f ${BIN} ${OBJ}
+	rm -f ${BIN} ${OBJ} ${NAME}-${VERSION}.tar.gz
 
 install: all
 	# installing executable files.
