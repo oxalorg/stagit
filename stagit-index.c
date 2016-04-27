@@ -24,17 +24,6 @@ static char description[255] = "Repositories";
 static char name[255];
 static char owner[255];
 
-FILE *
-efopen(const char *name, const char *flags)
-{
-	FILE *fp;
-
-	if (!(fp = fopen(name, flags)))
-		err(1, "fopen");
-
-	return fp;
-}
-
 /* Escape characters below as HTML 2.0 / XML 1.0. */
 void
 xmlencode(FILE *fp, const char *s, size_t len)
