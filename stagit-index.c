@@ -49,7 +49,8 @@ printtimeformat(FILE *fp, const git_time *intime, const char *fmt)
 	char out[32];
 
 	t = (time_t) intime->time + (intime->offset * 60);
-	intm = gmtime(&t);
+	if (!(intm = gmtime(&t)))
+		return;
 	strftime(out, sizeof(out), fmt, intm);
 	fputs(out, fp);
 }
