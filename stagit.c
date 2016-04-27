@@ -394,7 +394,7 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 			if (git_patch_get_hunk(&hunk, &nhunklines, patch, j))
 				break;
 
-			fprintf(fp, "<a href=\"#h%zu\" id=\"h%zu\" class=\"h\">", j, j);
+			fprintf(fp, "<a href=\"#h%zu-%zu\" id=\"h%zu-%zu\" class=\"h\">", i, j, i, j);
 			xmlencode(fp, hunk->header, hunk->header_len);
 			fputs("</a>", fp);
 
@@ -402,11 +402,11 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 				if (git_patch_get_line_in_hunk(&line, patch, j, k))
 					break;
 				if (line->old_lineno == -1)
-					fprintf(fp, "<a href=\"#h%zu-%zu\" id=\"h%zu-%zu\" class=\"i\">+",
-						j, k, j, k);
+					fprintf(fp, "<a href=\"#h%zu-%zu-%zu\" id=\"h%zu-%zu-%zu\" class=\"i\">+",
+						i, j, k, i, j, k);
 				else if (line->new_lineno == -1)
-					fprintf(fp, "<a href=\"#h%zu-%zu\" id=\"h%zu-%zu\" class=\"d\">-",
-						j, k, j, k);
+					fprintf(fp, "<a href=\"#h%zu-%zu-%zu\" id=\"h%zu-%zu-%zu\" class=\"d\">-",
+						i, j, k, i, j, k);
 				else
 					fputc(' ', fp);
 				xmlencode(fp, line->content, line->content_len);
