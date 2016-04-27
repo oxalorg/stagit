@@ -42,7 +42,7 @@ static git_repository *repo;
 static const char *relpath = "";
 static const char *repodir;
 
-static char *name;
+static char *name = "";
 static char *stripped_name;
 static char description[255];
 static char cloneurl[1024];
@@ -155,27 +155,6 @@ xdirname(const char *path)
 		err(1, "strdup");
 	if (!(b = dirname(p)))
 		err(1, "dirname");
-	if (!(b = strdup(b)))
-		err(1, "strdup");
-	free(p);
-
-	return b;
-}
-
-/* Some implementations of basename(3) return a pointer to a static
- * internal buffer (OpenBSD). Others modify the contents of `path` (POSIX).
- * This is a wrapper function that is compatible with both versions.
- * The program will error out if basename(3) failed, this can only happen
- * with the OpenBSD version. */
-char *
-xbasename(const char *path)
-{
-	char *p, *b;
-
-	if (!(p = strdup(path)))
-		err(1, "strdup");
-	if (!(b = basename(p)))
-		err(1, "basename");
 	if (!(b = strdup(b)))
 		err(1, "strdup");
 	free(p);
@@ -879,7 +858,7 @@ main(int argc, char *argv[])
 	const git_oid *head = NULL;
 	const git_error *e = NULL;
 	FILE *fp, *fpread;
-	char path[PATH_MAX], *p;
+	char path[PATH_MAX], repodirabs[PATH_MAX + 1], *p;
 	int r, status;
 
 	if (argc != 2) {
@@ -887,6 +866,8 @@ main(int argc, char *argv[])
 		return 1;
 	}
 	repodir = argv[1];
+	if (!realpath(repodir, repodirabs))
+		err(1, "realpath");
 
 	git_libgit2_init();
 
@@ -904,7 +885,10 @@ main(int argc, char *argv[])
 	git_object_free(obj);
 
 	/* use directory name as name */
-	name = xbasename(repodir);
+	if ((name = strrchr(repodirabs, '/')))
+		name++;
+	else
+		name = "";
 
 	/* strip .git suffix */
 	if (!(stripped_name = strdup(name)))

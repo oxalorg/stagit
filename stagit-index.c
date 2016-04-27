@@ -3,7 +3,6 @@
 #include <err.h>
 #include <errno.h>
 #include <inttypes.h>
-#include <libgen.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,7 +20,7 @@ static const char *relpath = "";
 static const char *repodir;
 
 static char description[255] = "Repositories";
-static char name[255];
+static char *name = "";
 static char owner[255];
 
 /* Escape characters below as HTML 2.0 / XML 1.0. */
@@ -40,27 +39,6 @@ xmlencode(FILE *fp, const char *s, size_t len)
 		default:   fputc(*s, fp);
 		}
 	}
-}
-
-/* Some implementations of basename(3) return a pointer to a static
- * internal buffer (OpenBSD). Others modify the contents of `path` (POSIX).
- * This is a wrapper function that is compatible with both versions.
- * The program will error out if basename(3) failed, this can only happen
- * with the OpenBSD version. */
-char *
-xbasename(const char *path)
-{
-	char *p, *b;
-
-	if (!(p = strdup(path)))
-		err(1, "strdup");
-	if (!(b = basename(p)))
-		err(1, "basename");
-	if (!(b = strdup(b)))
-		err(1, "strdup");
-	free(p);
-
-	return b;
 }
 
 void
@@ -166,7 +144,7 @@ main(int argc, char *argv[])
 {
 	const git_error *e = NULL;
 	FILE *fp;
-	char path[PATH_MAX], *p;
+	char path[PATH_MAX], repodirabs[PATH_MAX + 1];
 	int i, r, ret = 0;
 
 	if (argc < 2) {
@@ -179,6 +157,8 @@ main(int argc, char *argv[])
 
 	for (i = 1; i < argc; i++) {
 		repodir = argv[i];
+		if (!realpath(repodir, repodirabs))
+			err(1, "realpath");
 
 		if (git_repository_open_ext(&repo, repodir,
 		    GIT_REPOSITORY_OPEN_NO_SEARCH, NULL)) {
@@ -188,10 +168,11 @@ main(int argc, char *argv[])
 			continue;
 		}
 
-		/* use directory name as name, truncation of name is no problem. */
-		p = xbasename(repodir);
-		snprintf(name, sizeof(name), "%s", p);
-		free(p);
+		/* use directory name as name */
+		if ((name = strrchr(repodirabs, '/')))
+			name++;
+		else
+			name = "";
 
 		/* read description or .git/description */
 		description[0] = '\0';
