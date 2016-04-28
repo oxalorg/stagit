@@ -58,6 +58,10 @@ table td {
 	white-space: normal;
 }
 
+a.module {
+	color: #777;
+}
+
 td.num {
 	text-align: right;
 }

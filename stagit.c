@@ -653,6 +653,7 @@ int
 writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 {
 	const git_tree_entry *entry = NULL;
+	git_submodule *module = NULL;
 	const char *entryname;
 	char filepath[PATH_MAX], entrypath[PATH_MAX];
 	git_object *obj = NULL;
@@ -663,29 +664,13 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 	count = git_tree_entrycount(tree);
 	for (i = 0; i < count; i++) {
 		if (!(entry = git_tree_entry_byindex(tree, i)) ||
-		    git_tree_entry_to_object(&obj, repo, entry))
+		    !(entryname = git_tree_entry_name(entry)))
 			return -1;
-		entryname = git_tree_entry_name(entry);
 		r = snprintf(entrypath, sizeof(entrypath), "%s%s%s",
 			 path, path[0] ? "/" : "", entryname);
 		if (r == -1 || (size_t)r >= sizeof(entrypath))
 			errx(1, "path truncated: '%s%s%s'",
 			        path, path[0] ? "/" : "", entryname);
-		switch (git_object_type(obj)) {
-		case GIT_OBJ_BLOB:
-			break;
-		case GIT_OBJ_TREE:
-			/* NOTE: recurses */
-			ret = writefilestree(fp, (git_tree *)obj, branch,
-			                     entrypath);
-			git_object_free(obj);
-			if (ret)
-				return ret;
-			continue;
-		default:
-			git_object_free(obj);
-			continue;
-		}
 
 		r = snprintf(filepath, sizeof(filepath), "file/%s%s%s.html",
 		         path, path[0] ? "/" : "", entryname);
@@ -693,20 +678,46 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 			errx(1, "path truncated: 'file/%s%s%s.html'",
 			        path, path[0] ? "/" : "", entryname);
 
-		filesize = git_blob_rawsize((git_blob *)obj);
+		if (!git_tree_entry_to_object(&obj, repo, entry)) {
+			switch (git_object_type(obj)) {
+			case GIT_OBJ_BLOB:
+				break;
+			case GIT_OBJ_TREE:
+				/* NOTE: recurses */
+				ret = writefilestree(fp, (git_tree *)obj, branch,
+				                     entrypath);
+				git_object_free(obj);
+				if (ret)
+					return ret;
+				continue;
+			default:
+				git_object_free(obj);
+				continue;
+			}
 
-		lc = writeblob(obj, filepath, entryname, filesize);
+			filesize = git_blob_rawsize((git_blob *)obj);
+			lc = writeblob(obj, filepath, entryname, filesize);
 
-		fputs("<tr><td>", fp);
-		fputs(filemode(git_tree_entry_filemode(entry)), fp);
-		fprintf(fp, "</td><td><a href=\"%s%s\">", relpath, filepath);
-		xmlencode(fp, entrypath, strlen(entrypath));
-		fputs("</a></td><td class=\"num\">", fp);
-		if (showlinecount && lc > 0)
-			fprintf(fp, "%dL", lc);
-		else
-			fprintf(fp, "%juB", (uintmax_t)filesize);
-		fputs("</td></tr>\n", fp);
+			fputs("<tr><td>", fp);
+			fputs(filemode(git_tree_entry_filemode(entry)), fp);
+			fprintf(fp, "</td><td><a href=\"%s%s\">", relpath, filepath);
+			xmlencode(fp, entrypath, strlen(entrypath));
+			fputs("</a></td><td class=\"num\">", fp);
+			if (showlinecount && lc > 0)
+				fprintf(fp, "%dL", lc);
+			else
+				fprintf(fp, "%juB", (uintmax_t)filesize);
+			fputs("</td></tr>\n", fp);
+		} else if (git_submodule_lookup(&module, repo, entryname) == 0) {
+
+			fprintf(fp, "<tr><td></td><td><a class=\"module\" href=\"%s\">@",
+				git_submodule_url(module));
+			xmlencode(fp, entrypath, strlen(entrypath));
+			fprintf(fp, "</a></td><td class=\"num\">0%c",
+				showlinecount ? 'L' : 'B');
+			git_submodule_free(module);
+			fputs("</td></tr>\n", fp);
+		}
 	}
 
 	return 0;
