@@ -709,13 +709,18 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 				fprintf(fp, "%juB", (uintmax_t)filesize);
 			fputs("</td></tr>\n", fp);
 		} else if (git_submodule_lookup(&module, repo, entryname) == 0) {
-			moduleurl = git_submodule_url(module);
-			fprintf(fp, "<tr><td>m---------</td><td><a class=\"module\" href=\"%s\">",
-				moduleurl);
+			fputs("<tr><td>m---------</td><td>", fp);
+			if ((moduleurl = git_submodule_url(module))) {
+				fprintf(fp, "<a class=\"module\" href=\"%s\">",
+				        moduleurl);
+			}
 			xmlencode(fp, entrypath, strlen(entrypath));
-			fputs(" @", fp);
-			xmlencode(fp, moduleurl, strlen(moduleurl));
-			fprintf(fp, "</a></td><td class=\"num\">0%c",
+			if (moduleurl) {
+				fputs(" @", fp);
+				xmlencode(fp, moduleurl, strlen(moduleurl));
+				fputs("</a>", fp);
+			}
+			fprintf(fp, "</td><td class=\"num\">0%c",
 				showlinecount ? 'L' : 'B');
 			git_submodule_free(module);
 			fputs("</td></tr>\n", fp);
