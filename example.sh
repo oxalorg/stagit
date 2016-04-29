@@ -17,26 +17,13 @@ curdir=$(pwd)
 
 # make index.
 cd "${reposdir}"
-find . -maxdepth 1 -type d | grep -v "^.$" | sort | xargs stagit-index |
-        sed 's@<td>Last commit</td>@<td><a href="index-time.html">Last commit</a></td>@g' | \
-        sed 's@<td>Name</td>@<td><a href="index.html">Name</a></td>@g' > "${curdir}/index.html"
-
-# make index (sort by last commit author time).
-find . -maxdepth 1 -type d | grep -v "^.$" | while read -r dir; do
-	d=$(basename "${dir}")
-	cd "${reposdir}/${d}"
-	timestamp=$(git show -s --pretty="format:%at" || true)
-
-	printf "%d %s\n" "${timestamp}" "${d}"
-done | sort -n -k 1 | cut -f 2- -d ' ' | xargs stagit-index | \
-	sed 's@<td>Last commit</td>@<td><a href="index-time.html">Last commit</a></td>@g' | \
-	sed 's@<td>Name</td>@<td><a href="index.html">Name</a></td>@g' > "${curdir}/index-time.html"
+find . -maxdepth 1 -type d | grep -v "^.$" | xargs stagit-index > "${curdir}/index.html"
 
 # make files per repo.
 cd "${reposdir}"
-find . -maxdepth 1 -type d | grep -v "^.$" | sort | while read -r dir; do
+find . -maxdepth 1 -type d | grep -v "^.$" | while read -r dir; do
 	d=$(basename "${dir}")
-	printf "%s..." "${d}"
+	printf "%s... " "${d}"
 
 	mkdir -p "${curdir}/${d}"
 	cd "${curdir}/${d}"
@@ -48,5 +35,5 @@ find . -maxdepth 1 -type d | grep -v "^.$" | sort | while read -r dir; do
 	ln -sf ../logo.png logo.png
 	ln -sf ../favicon.png favicon.png
 
-	printf " done\n"
+	printf "done\n"
 done
