@@ -654,7 +654,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 {
 	const git_tree_entry *entry = NULL;
 	git_submodule *module = NULL;
-	const char *entryname;
+	const char *entryname, *moduleurl;
 	char filepath[PATH_MAX], entrypath[PATH_MAX];
 	git_object *obj = NULL;
 	git_off_t filesize;
@@ -709,10 +709,12 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 				fprintf(fp, "%juB", (uintmax_t)filesize);
 			fputs("</td></tr>\n", fp);
 		} else if (git_submodule_lookup(&module, repo, entryname) == 0) {
-
-			fprintf(fp, "<tr><td></td><td><a class=\"module\" href=\"%s\">@",
-				git_submodule_url(module));
+			moduleurl = git_submodule_url(module);
+			fprintf(fp, "<tr><td>m---------</td><td><a class=\"module\" href=\"%s\">",
+				moduleurl);
 			xmlencode(fp, entrypath, strlen(entrypath));
+			fputs(" @", fp);
+			xmlencode(fp, moduleurl, strlen(moduleurl));
 			fprintf(fp, "</a></td><td class=\"num\">0%c",
 				showlinecount ? 'L' : 'B');
 			git_submodule_free(module);
