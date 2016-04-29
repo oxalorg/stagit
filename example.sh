@@ -17,11 +17,11 @@ curdir=$(pwd)
 
 # make index.
 cd "${reposdir}"
-find . -maxdepth 1 -type d | grep -v "^.$" | xargs stagit-index > "${curdir}/index.html"
+find . -maxdepth 1 -type d | grep -v "^.$" | sort | xargs stagit-index > "${curdir}/index.html"
 
 # make files per repo.
 cd "${reposdir}"
-find . -maxdepth 1 -type d | grep -v "^.$" | while read -r dir; do
+find . -maxdepth 1 -type d | grep -v "^.$" | sort | while read -r dir; do
 	d=$(basename "${dir}")
 	printf "%s... " "${d}"
 
