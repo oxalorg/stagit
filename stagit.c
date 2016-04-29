@@ -46,7 +46,7 @@ static char *name = "";
 static char *stripped_name;
 static char description[255];
 static char cloneurl[1024];
-static int hasreadme, haslicense;
+static int haslicense, hasreadme, hassubmodules;
 
 void
 commitinfo_free(struct commitinfo *ci)
@@ -251,6 +251,8 @@ writeheader(FILE *fp, const char *title)
 	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
 	fprintf(fp, "<a href=\"%sfiles.html\">Files</a> | ", relpath);
 	fprintf(fp, "<a href=\"%srefs.html\">Refs</a>", relpath);
+	if (hassubmodules)
+		fprintf(fp, " | <a href=\"%sfile/.gitmodules.html\">Submodules</a>", relpath);
 	if (hasreadme)
 		fprintf(fp, " | <a href=\"%sfile/README.html\">README</a>", relpath);
 	if (haslicense)
@@ -654,7 +656,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 {
 	const git_tree_entry *entry = NULL;
 	git_submodule *module = NULL;
-	const char *entryname, *moduleurl;
+	const char *entryname;
 	char filepath[PATH_MAX], entrypath[PATH_MAX];
 	git_object *obj = NULL;
 	git_off_t filesize;
@@ -709,21 +711,11 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 				fprintf(fp, "%juB", (uintmax_t)filesize);
 			fputs("</td></tr>\n", fp);
 		} else if (!git_submodule_lookup(&module, repo, entryname)) {
-			fputs("<tr><td>m---------</td><td>", fp);
-			if ((moduleurl = git_submodule_url(module))) {
-				fprintf(fp, "<a class=\"module\" href=\"%s\">",
-				        moduleurl);
-			}
+			fprintf(fp, "<tr><td>m------</td><td><a href=\"%sfile/.gitmodules.html\">",
+				relpath);
 			xmlencode(fp, entrypath, strlen(entrypath));
-			if (moduleurl) {
-				fputs(" @", fp);
-				xmlencode(fp, moduleurl, strlen(moduleurl));
-				fputs("</a>", fp);
-			}
-			fprintf(fp, "</td><td class=\"num\">0%c",
-				showlinecount ? 'L' : 'B');
 			git_submodule_free(module);
-			fputs("</td></tr>\n", fp);
+			fputs("</a></td><td class=\"num\"></td></tr>\n", fp);
 		}
 	}
 
@@ -962,6 +954,8 @@ main(int argc, char *argv[])
 	git_object_free(obj);
 	/* check README */
 	hasreadme = !git_revparse_single(&obj, repo, "HEAD:README");
+	git_object_free(obj);
+	hassubmodules = !git_revparse_single(&obj, repo, "HEAD:.gitmodules");
 	git_object_free(obj);
 
 	/* log for HEAD */
