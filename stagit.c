@@ -711,7 +711,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 				fprintf(fp, "%juB", (uintmax_t)filesize);
 			fputs("</td></tr>\n", fp);
 		} else if (!git_submodule_lookup(&module, repo, entryname)) {
-			fprintf(fp, "<tr><td>m------</td><td><a href=\"%sfile/.gitmodules.html\">",
+			fprintf(fp, "<tr><td>m---------</td><td><a href=\"%sfile/.gitmodules.html\">",
 				relpath);
 			xmlencode(fp, entrypath, strlen(entrypath));
 			git_submodule_free(module);
