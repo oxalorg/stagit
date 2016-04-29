@@ -893,7 +893,7 @@ main(int argc, char *argv[])
 	if ((status = git_repository_open_ext(&repo, repodir,
 		GIT_REPOSITORY_OPEN_NO_SEARCH, NULL)) < 0) {
 		e = giterr_last();
-		fprintf(stderr, "error %d/%d: %s\n", status, e->klass, e->message);
+		fprintf(stderr, "%s: %s\n", argv[0], e->message);
 		return status;
 	}
 
