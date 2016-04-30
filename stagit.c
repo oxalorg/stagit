@@ -15,6 +15,13 @@
 #include "compat.h"
 #include "config.h"
 
+struct deltainfo {
+	git_patch *patch;
+
+	size_t addcount;
+	size_t delcount;
+};
+
 struct commitinfo {
 	const git_oid *id;
 
@@ -25,16 +32,18 @@ struct commitinfo {
 	const char          *summary;
 	const char          *msg;
 
-	git_diff_stats *stats;
-	git_diff       *diff;
-	git_commit     *commit;
-	git_commit     *parent;
-	git_tree       *commit_tree;
-	git_tree       *parent_tree;
+	git_diff   *diff;
+	git_commit *commit;
+	git_commit *parent;
+	git_tree   *commit_tree;
+	git_tree   *parent_tree;
 
 	size_t addcount;
 	size_t delcount;
 	size_t filecount;
+
+	struct deltainfo **deltas;
+	size_t ndeltas;
 };
 
 static git_repository *repo;
@@ -49,12 +58,95 @@ static char cloneurl[1024];
 static int haslicense, hasreadme, hassubmodules;
 
 void
+deltainfo_free(struct deltainfo *di)
+{
+	if (!di)
+		return;
+	git_patch_free(di->patch);
+	di->patch = NULL;
+	free(di);
+}
+
+int
+commitinfo_getstats(struct commitinfo *ci)
+{
+	struct deltainfo *di;
+	const git_diff_delta *delta;
+	const git_diff_hunk *hunk;
+	const git_diff_line *line;
+	git_patch *patch = NULL;
+	size_t ndeltas, nhunks, nhunklines;
+	size_t i, j, k;
+
+	ndeltas = git_diff_num_deltas(ci->diff);
+	if (ndeltas && !(ci->deltas = calloc(ndeltas, sizeof(struct deltainfo *))))
+		err(1, "calloc");
+
+	for (i = 0; i < ndeltas; i++) {
+		if (!(di = calloc(1, sizeof(struct deltainfo))))
+			err(1, "calloc");
+		if (git_patch_from_diff(&patch, ci->diff, i)) {
+			git_patch_free(patch);
+			goto err;
+		}
+		di->patch = patch;
+		ci->deltas[i] = di;
+
+		delta = git_patch_get_delta(patch);
+
+		/* check binary data */
+		if (delta->flags & GIT_DIFF_FLAG_BINARY)
+			continue;
+
+		nhunks = git_patch_num_hunks(patch);
+		for (j = 0; j < nhunks; j++) {
+			if (git_patch_get_hunk(&hunk, &nhunklines, patch, j))
+				break;
+			for (k = 0; ; k++) {
+				if (git_patch_get_line_in_hunk(&line, patch, j, k))
+					break;
+				if (line->old_lineno == -1) {
+					di->addcount++;
+					ci->addcount++;
+				} else if (line->new_lineno == -1) {
+					di->delcount++;
+					ci->delcount++;
+				}
+			}
+		}
+	}
+	ci->ndeltas = i;
+	ci->filecount = i;
+
+	return 0;
+
+err:
+	if (ci->deltas)
+		for (i = 0; i < ci->ndeltas; i++)
+			deltainfo_free(ci->deltas[i]);
+	free(ci->deltas);
+	ci->deltas = NULL;
+	ci->ndeltas = 0;
+	ci->addcount = 0;
+	ci->delcount = 0;
+	ci->filecount = 0;
+
+	return -1;
+}
+
+void
 commitinfo_free(struct commitinfo *ci)
 {
+	size_t i;
+
 	if (!ci)
 		return;
 
-	git_diff_stats_free(ci->stats);
+	if (ci->deltas)
+		for (i = 0; i < ci->ndeltas; i++)
+			deltainfo_free(ci->deltas[i]);
+	free(ci->deltas);
+	ci->deltas = NULL;
 	git_diff_free(ci->diff);
 	git_tree_free(ci->commit_tree);
 	git_tree_free(ci->parent_tree);
@@ -66,6 +158,7 @@ commitinfo_getbyoid(const git_oid *id)
 {
 	struct commitinfo *ci;
 	git_diff_options opts;
+	const git_oid *oid;
 	int error;
 
 	if (!(ci = calloc(1, sizeof(struct commitinfo))))
@@ -82,26 +175,24 @@ commitinfo_getbyoid(const git_oid *id)
 	ci->summary = git_commit_summary(ci->commit);
 	ci->msg = git_commit_message(ci->commit);
 
-	if ((error = git_commit_tree(&(ci->commit_tree), ci->commit)))
+	oid = git_commit_tree_id(ci->commit);
+	if ((error = git_tree_lookup(&(ci->commit_tree), repo, oid)))
 		goto err;
 	if (!(error = git_commit_parent(&(ci->parent), ci->commit, 0))) {
-		if ((error = git_commit_tree(&(ci->parent_tree), ci->parent)))
-			goto err;
-	} else {
-		ci->parent = NULL;
-		ci->parent_tree = NULL;
+		oid = git_commit_tree_id(ci->parent);
+		if ((error = git_tree_lookup(&(ci->parent_tree), repo, oid))) {
+			ci->parent = NULL;
+			ci->parent_tree = NULL;
+		}
 	}
 
 	git_diff_init_options(&opts, GIT_DIFF_OPTIONS_VERSION);
 	opts.flags |= GIT_DIFF_DISABLE_PATHSPEC_MATCH;
 	if ((error = git_diff_tree_to_tree(&(ci->diff), repo, ci->parent_tree, ci->commit_tree, &opts)))
 		goto err;
-	if (git_diff_get_stats(&(ci->stats), ci->diff))
-		goto err;
 
-	ci->addcount = git_diff_stats_insertions(ci->stats);
-	ci->delcount = git_diff_stats_deletions(ci->stats);
-	ci->filecount = git_diff_stats_files_changed(ci->stats);
+	if (commitinfo_getstats(ci) == -1)
+		goto err;
 
 	return ci;
 
@@ -332,33 +423,55 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 	const git_diff_hunk *hunk;
 	const git_diff_line *line;
 	git_patch *patch;
-	git_buf statsbuf;
-	size_t ndeltas, nhunks, nhunklines;
+	size_t nhunks, nhunklines, changed, add, del, total;
 	size_t i, j, k;
+	char linestr[80];
 
 	printcommit(fp, ci);
 
-	memset(&statsbuf, 0, sizeof(statsbuf));
+	if (!ci->deltas)
+		return;
 
 	/* diff stat */
-	if (ci->stats &&
-	    !git_diff_stats_to_buf(&statsbuf, ci->stats,
-                                   GIT_DIFF_STATS_FULL | GIT_DIFF_STATS_SHORT, 80)) {
-		if (statsbuf.ptr && statsbuf.ptr[0]) {
-			fputs("<b>Diffstat:</b>\n", fp);
-			xmlencode(fp, statsbuf.ptr, strlen(statsbuf.ptr));
+	fputs("<b>Diffstat:</b>\n<table>", fp);
+	for (i = 0; i < ci->ndeltas; i++) {
+		delta = git_patch_get_delta(ci->deltas[i]->patch);
+		fputs("<tr><td>", fp);
+		xmlencode(fp, delta->old_file.path, strlen(delta->old_file.path));
+		if (strcmp(delta->old_file.path, delta->new_file.path)) {
+			fputs(" -&gt; ", fp);
+			xmlencode(fp, delta->new_file.path, strlen(delta->new_file.path));
 		}
+
+		add = ci->deltas[i]->addcount;
+		del = ci->deltas[i]->delcount;
+		changed = add + del;
+		total = sizeof(linestr) - 2;
+		if (changed > total) {
+			if (add)
+				add = ((float)total / changed * add) + 1;
+			if (del)
+				del = ((float)total / changed * del) + 1;
+		}
+		memset(&linestr, '+', add);
+		memset(&linestr[add], '-', del);
+
+		fprintf(fp, "</td><td> | %zu <span class=\"i\">",
+		        ci->deltas[i]->addcount + ci->deltas[i]->delcount);
+		fwrite(&linestr, 1, add, fp);
+		fputs("</span><span class=\"d\">", fp);
+		fwrite(&linestr[add], 1, del, fp);
+		fputs("</span></td></tr>\n", fp);
 	}
+	fprintf(fp, "</table>%zu file%s changed, %zu insertion%s(+), %zu deletion%s(-)\n",
+		ci->filecount, ci->filecount == 1 ? "" : "s",
+	        ci->addcount,  ci->addcount  == 1 ? "" : "s",
+	        ci->delcount,  ci->delcount  == 1 ? "" : "s");
 
 	fputs("<hr/>", fp);
 
-	ndeltas = git_diff_num_deltas(ci->diff);
-	for (i = 0; i < ndeltas; i++) {
-		if (git_patch_from_diff(&patch, ci->diff, i)) {
-			git_patch_free(patch);
-			break;
-		}
-
+	for (i = 0; i < ci->ndeltas; i++) {
+		patch = ci->deltas[i]->patch;
 		delta = git_patch_get_delta(patch);
 		fprintf(fp, "<b>diff --git a/<a href=\"%sfile/%s.html\">%s</a> b/<a href=\"%sfile/%s.html\">%s</a></b>\n",
 			relpath, delta->old_file.path, delta->old_file.path,
@@ -367,7 +480,6 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 		/* check binary data */
 		if (delta->flags & GIT_DIFF_FLAG_BINARY) {
 			fputs("Binary files differ\n", fp);
-			git_patch_free(patch);
 			continue;
 		}
 
@@ -396,11 +508,7 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 					fputs("</a>", fp);
 			}
 		}
-		git_patch_free(patch);
 	}
-	git_buf_free(&statsbuf);
-
-	return;
 }
 
 int

@@ -79,10 +79,12 @@ pre a.h {
 	color: #00a;
 }
 
+span.i,
 pre a.i {
 	color: #070;
 }
 
+span.d,
 pre a.d {
 	color: #e00;
 }
