@@ -464,7 +464,7 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 		memset(&linestr, '+', add);
 		memset(&linestr[add], '-', del);
 
-		fprintf(fp, "</td><td> | %zu <span class=\"i\">",
+		fprintf(fp, "</td><td> | </td><td class=\"num\">%zu</td><td><span class=\"i\">",
 		        ci->deltas[i]->addcount + ci->deltas[i]->delcount);
 		fwrite(&linestr, 1, add, fp);
 		fputs("</span><span class=\"d\">", fp);
