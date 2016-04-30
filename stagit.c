@@ -432,6 +432,14 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 	if (!ci->deltas)
 		return;
 
+	if (ci->filecount > 1000   ||
+	    ci->ndeltas   > 1000   ||
+	    ci->addcount  > 100000 ||
+	    ci->delcount  > 100000) {
+		fprintf(fp, "(diff is too large, output suppressed)");
+		return;
+	}
+
 	/* diff stat */
 	fputs("<b>Diffstat:</b>\n<table>", fp);
 	for (i = 0; i < ci->ndeltas; i++) {
