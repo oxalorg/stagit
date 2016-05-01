@@ -92,11 +92,11 @@ writefooter(FILE *fp)
 int
 writelog(FILE *fp)
 {
-	char *stripped_name = NULL, *p;
 	git_commit *commit = NULL;
 	const git_signature *author;
 	git_revwalk *w = NULL;
 	git_oid id;
+	char *stripped_name = NULL, *p;
 	int ret = 0;
 
 	git_revwalk_new(&w, repo);

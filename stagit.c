@@ -141,7 +141,6 @@ commitinfo_free(struct commitinfo *ci)
 
 	if (!ci)
 		return;
-
 	if (ci->deltas)
 		for (i = 0; i < ci->ndeltas; i++)
 			deltainfo_free(ci->deltas[i]);
@@ -158,15 +157,13 @@ commitinfo_getbyoid(const git_oid *id)
 {
 	struct commitinfo *ci;
 	git_diff_options opts;
-	const git_oid *oid;
-	int error;
 
 	if (!(ci = calloc(1, sizeof(struct commitinfo))))
 		err(1, "calloc");
 
-	ci->id = id;
 	if (git_commit_lookup(&(ci->commit), repo, id))
 		goto err;
+	ci->id = id;
 
 	git_oid_tostr(ci->oid, sizeof(ci->oid), git_commit_id(ci->commit));
 	git_oid_tostr(ci->parentoid, sizeof(ci->parentoid), git_commit_parent_id(ci->commit, 0));
@@ -175,12 +172,10 @@ commitinfo_getbyoid(const git_oid *id)
 	ci->summary = git_commit_summary(ci->commit);
 	ci->msg = git_commit_message(ci->commit);
 
-	oid = git_commit_tree_id(ci->commit);
-	if ((error = git_tree_lookup(&(ci->commit_tree), repo, oid)))
+	if (git_tree_lookup(&(ci->commit_tree), repo, git_commit_tree_id(ci->commit)))
 		goto err;
-	if (!(error = git_commit_parent(&(ci->parent), ci->commit, 0))) {
-		oid = git_commit_tree_id(ci->parent);
-		if ((error = git_tree_lookup(&(ci->parent_tree), repo, oid))) {
+	if (!git_commit_parent(&(ci->parent), ci->commit, 0)) {
+		if (git_tree_lookup(&(ci->parent_tree), repo, git_commit_tree_id(ci->parent))) {
 			ci->parent = NULL;
 			ci->parent_tree = NULL;
 		}
@@ -188,9 +183,8 @@ commitinfo_getbyoid(const git_oid *id)
 
 	git_diff_init_options(&opts, GIT_DIFF_OPTIONS_VERSION);
 	opts.flags |= GIT_DIFF_DISABLE_PATHSPEC_MATCH;
-	if ((error = git_diff_tree_to_tree(&(ci->diff), repo, ci->parent_tree, ci->commit_tree, &opts)))
+	if (git_diff_tree_to_tree(&(ci->diff), repo, ci->parent_tree, ci->commit_tree, &opts))
 		goto err;
-
 	if (commitinfo_getstats(ci) == -1)
 		goto err;
 
@@ -423,8 +417,7 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 	const git_diff_hunk *hunk;
 	const git_diff_line *line;
 	git_patch *patch;
-	size_t nhunks, nhunklines, changed, add, del, total;
-	size_t i, j, k;
+	size_t nhunks, nhunklines, changed, add, del, total, i, j, k;
 	char linestr[80];
 
 	printcommit(fp, ci);
@@ -652,7 +645,7 @@ writeatom(FILE *fp)
 	struct commitinfo *ci;
 	git_revwalk *w = NULL;
 	git_oid id;
-	size_t i, m = 100; /* max */
+	size_t i, m = 100; /* last 'm' commits */
 
 	fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 	      "<feed xmlns=\"http://www.w3.org/2005/Atom\">\n<title>", fp);
@@ -682,8 +675,7 @@ writeatom(FILE *fp)
 int
 writeblob(git_object *obj, const char *fpath, const char *filename, git_off_t filesize)
 {
-	char tmp[PATH_MAX] = "";
-	char *d;
+	char tmp[PATH_MAX] = "", *d;
 	const char *p;
 	int lc = 0;
 	FILE *fp;
@@ -772,10 +764,10 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 {
 	const git_tree_entry *entry = NULL;
 	git_submodule *module = NULL;
-	const char *entryname;
-	char filepath[PATH_MAX], entrypath[PATH_MAX];
 	git_object *obj = NULL;
 	git_off_t filesize;
+	const char *entryname;
+	char filepath[PATH_MAX], entrypath[PATH_MAX];
 	size_t count, i;
 	int lc, r, ret;
 
@@ -889,7 +881,7 @@ writerefs(FILE *fp)
 	git_reference *dref = NULL, *r, *ref = NULL;
 	git_reference_iterator *it = NULL;
 	git_reference **refs = NULL;
-	size_t count, i, j, refcount = 0;
+	size_t count, i, j, refcount;
 	const char *titles[] = { "Branches", "Tags" };
 	const char *ids[] = { "branches", "tags" };
 	const char *name;
