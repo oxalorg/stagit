@@ -1013,7 +1013,6 @@ main(int argc, char *argv[])
 	const git_error *e = NULL;
 	FILE *fp, *fpread;
 	char path[PATH_MAX], repodirabs[PATH_MAX + 1], *p;
-	int status;
 
 	if (argc != 2) {
 		fprintf(stderr, "%s <repodir>\n", argv[0]);
@@ -1026,11 +1025,11 @@ main(int argc, char *argv[])
 
 	git_libgit2_init();
 
-	if ((status = git_repository_open_ext(&repo, repodir,
-		GIT_REPOSITORY_OPEN_NO_SEARCH, NULL)) < 0) {
+	if (git_repository_open_ext(&repo, repodir,
+		GIT_REPOSITORY_OPEN_NO_SEARCH, NULL) < 0) {
 		e = giterr_last();
 		fprintf(stderr, "%s: %s\n", argv[0], e->message);
-		return status;
+		return 1;
 	}
 
 	/* find HEAD */
