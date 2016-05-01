@@ -58,6 +58,12 @@ static char description[255];
 static char cloneurl[1024];
 static int haslicense, hasreadme, hassubmodules;
 
+/* cache */
+static git_oid lastoid;
+static char lastoidstr[GIT_OID_HEXSZ + 2]; /* id + newline + nul byte */
+static FILE *rcachefp, *wcachefp;
+static const char *cachefile;
+
 void
 deltainfo_free(struct deltainfo *di)
 {
@@ -530,13 +536,43 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 	}
 }
 
+void
+writelogline(FILE *fp, struct commitinfo *ci)
+{
+	size_t len;
+
+	fputs("<tr><td>", fp);
+	if (ci->author)
+		printtimeshort(fp, &(ci->author->when));
+	fputs("</td><td>", fp);
+	if (ci->summary) {
+		fprintf(fp, "<a href=\"%scommit/%s.html\">", relpath, ci->oid);
+		if ((len = strlen(ci->summary)) > summarylen) {
+			xmlencode(fp, ci->summary, summarylen - 1);
+			fputs("…", fp);
+		} else {
+			xmlencode(fp, ci->summary, len);
+		}
+		fputs("</a>", fp);
+	}
+	fputs("</td><td>", fp);
+	if (ci->author)
+		xmlencode(fp, ci->author->name, strlen(ci->author->name));
+	fputs("</td><td class=\"num\">", fp);
+	fprintf(fp, "%zu", ci->filecount);
+	fputs("</td><td class=\"num\">", fp);
+	fprintf(fp, "+%zu", ci->addcount);
+	fputs("</td><td class=\"num\">", fp);
+	fprintf(fp, "-%zu", ci->delcount);
+	fputs("</td></tr>\n", fp);
+}
+
 int
 writelog(FILE *fp, const git_oid *oid)
 {
 	struct commitinfo *ci;
 	git_revwalk *w = NULL;
 	git_oid id;
-	size_t len;
 	char path[PATH_MAX];
 	FILE *fpfile;
 	int r;
@@ -546,40 +582,17 @@ writelog(FILE *fp, const git_oid *oid)
 	git_revwalk_sorting(w, GIT_SORT_TIME);
 	git_revwalk_simplify_first_parent(w);
 
-	fputs("<table id=\"log\"><thead>\n<tr><td>Date</td><td>Commit message</td>"
-		  "<td>Author</td><td class=\"num\">Files</td><td class=\"num\">+</td>"
-		  "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
-
 	while (!git_revwalk_next(&id, w)) {
 		relpath = "";
 
+		if (cachefile && !memcmp(&id, &lastoid, sizeof(id)))
+			break;
 		if (!(ci = commitinfo_getbyoid(&id)))
 			break;
 
-		fputs("<tr><td>", fp);
-		if (ci->author)
-			printtimeshort(fp, &(ci->author->when));
-		fputs("</td><td>", fp);
-		if (ci->summary) {
-			fprintf(fp, "<a href=\"%scommit/%s.html\">", relpath, ci->oid);
-			if ((len = strlen(ci->summary)) > summarylen) {
-				xmlencode(fp, ci->summary, summarylen - 1);
-				fputs("…", fp);
-			} else {
-				xmlencode(fp, ci->summary, len);
-			}
-			fputs("</a>", fp);
-		}
-		fputs("</td><td>", fp);
-		if (ci->author)
-			xmlencode(fp, ci->author->name, strlen(ci->author->name));
-		fputs("</td><td class=\"num\">", fp);
-		fprintf(fp, "%zu", ci->filecount);
-		fputs("</td><td class=\"num\">", fp);
-		fprintf(fp, "+%zu", ci->addcount);
-		fputs("</td><td class=\"num\">", fp);
-		fprintf(fp, "-%zu", ci->delcount);
-		fputs("</td></tr>\n", fp);
+		writelogline(fp, ci);
+		if (cachefile)
+			writelogline(wcachefp, ci);
 
 		relpath = "../";
 
@@ -599,8 +612,6 @@ writelog(FILE *fp, const git_oid *oid)
 		}
 		commitinfo_free(ci);
 	}
-	fputs("</tbody></table>", fp);
-
 	git_revwalk_free(w);
 
 	relpath = "";
@@ -1005,6 +1016,13 @@ joinpath(char *buf, size_t bufsiz, const char *path, const char *path2)
 			path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
 }
 
+void
+usage(char *argv0)
+{
+	fprintf(stderr, "%s [-c cachefile] repodir\n", argv0);
+	exit(1);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -1013,12 +1031,23 @@ main(int argc, char *argv[])
 	const git_error *e = NULL;
 	FILE *fp, *fpread;
 	char path[PATH_MAX], repodirabs[PATH_MAX + 1], *p;
+	char tmppath[64] = "cache.XXXXXXXXXXXX", buf[BUFSIZ];
+	size_t n;
+	int i, fd;
 
-	if (argc != 2) {
-		fprintf(stderr, "%s <repodir>\n", argv[0]);
-		return 1;
+	for (i = 1; i < argc; i++) {
+		if (argv[i][0] != '-') {
+			if (repodir)
+				usage(argv[0]);
+			repodir = argv[i];
+		} else if (argv[i][1] == 'c') {
+			if (i + 1 >= argc)
+				usage(argv[0]);
+			cachefile = argv[++i];
+		}
 	}
-	repodir = argv[1];
+	if (!repodir)
+		usage(argv[0]);
 
 	if (!realpath(repodir, repodirabs))
 		err(1, "realpath");
@@ -1088,9 +1117,51 @@ main(int argc, char *argv[])
 	/* log for HEAD */
 	fp = efopen("log.html", "w");
 	relpath = "";
-	writeheader(fp, "Log");
 	mkdir("commit", 0755);
-	writelog(fp, head);
+	writeheader(fp, "Log");
+	fputs("<table id=\"log\"><thead>\n<tr><td>Date</td><td>Commit message</td>"
+		  "<td>Author</td><td class=\"num\">Files</td><td class=\"num\">+</td>"
+		  "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
+
+	if (cachefile) {
+		/* read from cache file (does not need to exist) */
+		if ((rcachefp = fopen(cachefile, "r"))) {
+			if (!fgets(lastoidstr, sizeof(lastoidstr), rcachefp))
+				errx(1, "%s: no object id", cachefile);
+			if (git_oid_fromstr(&lastoid, lastoidstr))
+				errx(1, "%s: invalid object id", cachefile);
+		}
+
+		/* write log to (temporary) cache */
+		if ((fd = mkstemp(tmppath)) == -1)
+			err(1, "mkstemp");
+		if (!(wcachefp = fdopen(fd, "w")))
+			err(1, "fdopen");
+		/* write last commit id (HEAD) */
+		git_oid_tostr(buf, sizeof(buf), head);
+		fprintf(wcachefp, "%s\n", buf);
+
+		writelog(fp, head);
+
+		if (rcachefp) {
+			/* append previous log to log.html and the new cache */
+			while (!feof(rcachefp)) {
+				n = fread(buf, 1, sizeof(buf), rcachefp);
+				if (ferror(rcachefp))
+					err(1, "fread");
+				if (fwrite(buf, 1, n, fp) != n)
+					err(1, "fwrite");
+				if (fwrite(buf, 1, n, wcachefp) != n)
+					err(1, "fwrite");
+			}
+			fclose(rcachefp);
+		}
+		fclose(wcachefp);
+	} else {
+		writelog(fp, head);
+	}
+
+	fputs("</tbody></table>", fp);
 	writefooter(fp);
 	fclose(fp);
 
@@ -1112,6 +1183,10 @@ main(int argc, char *argv[])
 	fp = efopen("atom.xml", "w");
 	writeatom(fp);
 	fclose(fp);
+
+	/* rename new cache file on success */
+	if (cachefile && rename(tmppath, cachefile))
+		err(1, "rename: '%s' to '%s'", tmppath, cachefile);
 
 	/* cleanup */
 	git_repository_free(repo);

@@ -1,4 +1,4 @@
-.Dd December 26, 2015
+.Dd May 1, 2016
 .Dt STAGIT 1
 .Os
 .Sh NAME
@@ -6,12 +6,26 @@
 .Nd static git page generator
 .Sh SYNOPSIS
 .Nm
-.Op Ar repodir
+.Op Fl c Ar cachefile
+.Ar repodir
 .Sh DESCRIPTION
 .Nm
 writes HTML pages for the repository
 .Ar repodir
-to the current directory. The following files will be written:
+to the current directory.
+.Pp
+Optionally the
+.Fl c Ar cachefile
+option can be used to cache the entries of the log page up to the point of
+the last commit. The
+.Ar cachefile
+will store the last commit id and the entries in the HTML table. It is up
+to the user to make sure the state of the
+.Ar cachefile
+is in sync with the history of the repository, for example a
+git push \-\-force can screw this up.
+.Pp
+The following files will be written:
 .Bl -tag -width Ds
 .It atom.xml
 Atom XML feed
