@@ -970,6 +970,18 @@ err:
 	return 0;
 }
 
+void
+joinpath(char *buf, size_t bufsiz, const char *path, const char *path2)
+{
+	int r;
+
+	r = snprintf(buf, bufsiz, "%s%s%s",
+		repodir, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
+	if (r == -1 || (size_t)r >= bufsiz)
+		errx(1, "path truncated: '%s%s%s'",
+			path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -978,13 +990,14 @@ main(int argc, char *argv[])
 	const git_error *e = NULL;
 	FILE *fp, *fpread;
 	char path[PATH_MAX], repodirabs[PATH_MAX + 1], *p;
-	int r, status;
+	int status;
 
 	if (argc != 2) {
 		fprintf(stderr, "%s <repodir>\n", argv[0]);
 		return 1;
 	}
 	repodir = argv[1];
+
 	if (!realpath(repodir, repodirabs))
 		err(1, "realpath");
 
@@ -1017,17 +1030,9 @@ main(int argc, char *argv[])
 			*p = '\0';
 
 	/* read description or .git/description */
-	r = snprintf(path, sizeof(path), "%s%s%s",
-		repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "description");
-	if (r == -1 || (size_t)r >= sizeof(path))
-		errx(1, "path truncated: '%s%s%s'",
-	                repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "description");
+	joinpath(path, sizeof(path), repodir, "description");
 	if (!(fpread = fopen(path, "r"))) {
-		r = snprintf(path, sizeof(path), "%s%s%s",
-			repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/description");
-		if (r == -1 || (size_t)r >= sizeof(path))
-			errx(1, "path truncated: '%s%s%s'",
-		                repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/description");
+		joinpath(path, sizeof(path), repodir, ".git/description");
 		fpread = fopen(path, "r");
 	}
 	if (fpread) {
@@ -1037,17 +1042,9 @@ main(int argc, char *argv[])
 	}
 
 	/* read url or .git/url */
-	r = snprintf(path, sizeof(path), "%s%s%s",
-		repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "url");
-	if (r == -1 || (size_t)r >= sizeof(path))
-		errx(1, "path truncated: '%s%s%s'",
-		        repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "url");
+	joinpath(path, sizeof(path), repodir, "url");
 	if (!(fpread = fopen(path, "r"))) {
-		r = snprintf(path, sizeof(path), "%s%s%s",
-			repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/url");
-		if (r == -1 || (size_t)r >= sizeof(path))
-			errx(1, "path truncated: '%s%s%s'",
-			        repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/url");
+		joinpath(path, sizeof(path), repodir, ".git/url");
 		fpread = fopen(path, "r");
 	}
 	if (fpread) {

@@ -140,13 +140,25 @@ err:
 	return ret;
 }
 
+void
+joinpath(char *buf, size_t bufsiz, const char *path, const char *path2)
+{
+	int r;
+
+	r = snprintf(buf, bufsiz, "%s%s%s",
+		repodir, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
+	if (r == -1 || (size_t)r >= bufsiz)
+		errx(1, "path truncated: '%s%s%s'",
+			path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
+}
+
 int
 main(int argc, char *argv[])
 {
 	const git_error *e = NULL;
 	FILE *fp;
 	char path[PATH_MAX], repodirabs[PATH_MAX + 1];
-	int i, r, ret = 0;
+	int i, ret = 0;
 
 	if (argc < 2) {
 		fprintf(stderr, "%s [repodir...]\n", argv[0]);
@@ -176,20 +188,12 @@ main(int argc, char *argv[])
 			name = "";
 
 		/* read description or .git/description */
-		description[0] = '\0';
-		r = snprintf(path, sizeof(path), "%s%s%s",
-			repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "description");
-		if (r == -1 || (size_t)r >= sizeof(path))
-			errx(1, "path truncated: '%s%s%s'",
-			        repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "description");
+		joinpath(path, sizeof(path), repodir, "description");
 		if (!(fp = fopen(path, "r"))) {
-			r = snprintf(path, sizeof(path), "%s%s%s",
-				repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/description");
-			if (r == -1 || (size_t)r >= sizeof(path))
-				errx(1, "path truncated: '%s%s%s'",
-				        repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/description");
+			joinpath(path, sizeof(path), repodir, ".git/description");
 			fp = fopen(path, "r");
 		}
+		description[0] = '\0';
 		if (fp) {
 			if (!fgets(description, sizeof(description), fp))
 				description[0] = '\0';
@@ -197,20 +201,12 @@ main(int argc, char *argv[])
 		}
 
 		/* read owner or .git/owner */
-		owner[0] = '\0';
-		r = snprintf(path, sizeof(path), "%s%s%s",
-			repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "owner");
-		if (r == -1 || (size_t)r >= sizeof(path))
-			errx(1, "path truncated: '%s%s%s'",
-			        repodir, repodir[strlen(repodir)] == '/' ? "" : "/", "owner");
+		joinpath(path, sizeof(path), repodir, "owner");
 		if (!(fp = fopen(path, "r"))) {
-			r = snprintf(path, sizeof(path), "%s%s%s",
-				repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/owner");
-			if (r == -1 || (size_t)r >= sizeof(path))
-				errx(1, "path truncated: '%s%s%s'",
-				        repodir, repodir[strlen(repodir)] == '/' ? "" : "/", ".git/owner");
+			joinpath(path, sizeof(path), repodir, ".git/owner");
 			fp = fopen(path, "r");
 		}
+		owner[0] = '\0';
 		if (fp) {
 			if (!fgets(owner, sizeof(owner), fp))
 				owner[0] = '\0';
