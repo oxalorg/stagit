@@ -268,35 +268,51 @@ mkdirp(const char *path)
 }
 
 void
-printtimeformat(FILE *fp, const git_time *intime, const char *fmt)
+printtimez(FILE *fp, const git_time *intime)
 {
 	struct tm *intm;
 	time_t t;
 	char out[32];
 
-	t = (time_t) intime->time + (intime->offset * 60);
+	t = (time_t)intime->time;
 	if (!(intm = gmtime(&t)))
 		return;
-	strftime(out, sizeof(out), fmt, intm);
+	strftime(out, sizeof(out), "%Y-%m-%dT%H:%M:%SZ", intm);
 	fputs(out, fp);
-}
-
-void
-printtimez(FILE *fp, const git_time *intime)
-{
-	printtimeformat(fp, intime, "%Y-%m-%dT%H:%M:%SZ");
 }
 
 void
 printtime(FILE *fp, const git_time *intime)
 {
-	printtimeformat(fp, intime, "%a %b %e %T %Y");
+	struct tm *intm;
+	time_t t;
+	int offset, sign = '+';
+	char out[32];
+
+	offset = intime->offset * 60;
+	t = (time_t)intime->time + offset;
+	if (!(intm = gmtime(&t)))
+		return;
+	strftime(out, sizeof(out), "%a %b %e %H:%M:%S", intm);
+	if (offset < 0) {
+		offset = -offset;
+		sign = '-';
+	}
+	fprintf(fp, "%s %c%02d%02d", out, sign, offset / 60, offset % 60);
 }
 
 void
 printtimeshort(FILE *fp, const git_time *intime)
 {
-	printtimeformat(fp, intime, "%Y-%m-%d %H:%M");
+	struct tm *intm;
+	time_t t;
+	char out[32];
+
+	t = (time_t)intime->time;
+	if (!(intm = gmtime(&t)))
+		return;
+	strftime(out, sizeof(out), "%Y-%m-%d %H:%M", intm);
+	fputs(out, fp);
 }
 
 int

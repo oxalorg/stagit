@@ -42,23 +42,17 @@ xmlencode(FILE *fp, const char *s, size_t len)
 }
 
 void
-printtimeformat(FILE *fp, const git_time *intime, const char *fmt)
+printtimeshort(FILE *fp, const git_time *intime)
 {
 	struct tm *intm;
 	time_t t;
 	char out[32];
 
-	t = (time_t) intime->time + (intime->offset * 60);
+	t = (time_t)intime->time;
 	if (!(intm = gmtime(&t)))
 		return;
-	strftime(out, sizeof(out), fmt, intm);
+	strftime(out, sizeof(out), "%Y-%m-%d %H:%M", intm);
 	fputs(out, fp);
-}
-
-void
-printtimeshort(FILE *fp, const git_time *intime)
-{
-	printtimeformat(fp, intime, "%Y-%m-%d %H:%M");
 }
 
 int
