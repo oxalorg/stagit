@@ -29,6 +29,7 @@ struct commitinfo {
 	char parentoid[GIT_OID_HEXSZ + 1];
 
 	const git_signature *author;
+	const git_signature *committer;
 	const char          *summary;
 	const char          *msg;
 
@@ -169,6 +170,7 @@ commitinfo_getbyoid(const git_oid *id)
 	git_oid_tostr(ci->parentoid, sizeof(ci->parentoid), git_commit_parent_id(ci->commit, 0));
 
 	ci->author = git_commit_author(ci->commit);
+	ci->committer = git_commit_committer(ci->commit);
 	ci->summary = git_commit_summary(ci->commit);
 	ci->msg = git_commit_message(ci->commit);
 
@@ -613,8 +615,13 @@ printcommitatom(FILE *fp, struct commitinfo *ci)
 
 	fprintf(fp, "<id>%s</id>\n", ci->oid);
 	if (ci->author) {
-		fputs("<updated>", fp);
+		fputs("<published>", fp);
 		printtimez(fp, &(ci->author->when));
+		fputs("</published>\n", fp);
+	}
+	if (ci->committer) {
+		fputs("<updated>", fp);
+		printtimez(fp, &(ci->committer->when));
 		fputs("</updated>\n", fp);
 	}
 	if (ci->summary) {
