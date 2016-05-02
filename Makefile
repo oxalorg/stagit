@@ -49,11 +49,7 @@ dist:
 		gzip -c > ${NAME}-${VERSION}.tar.gz
 	rm -rf ${NAME}-${VERSION}
 
-${OBJ}: config.h config.mk ${HDR}
-
-config.h:
-	@echo creating $@ from config.def.h
-	@cp config.def.h $@
+${OBJ}: config.mk ${HDR}
 
 stagit: stagit.o ${COMPATOBJ}
 	${CC} -o $@ stagit.o ${COMPATOBJ} ${LDFLAGS}

@@ -13,7 +13,6 @@
 #include <git2.h>
 
 #include "compat.h"
-#include "config.h"
 
 struct deltainfo {
 	git_patch *patch;
@@ -46,6 +45,11 @@ struct commitinfo {
 	struct deltainfo **deltas;
 	size_t ndeltas;
 };
+
+/* summary length (bytes) in the log */
+static const unsigned summarylen = 70;
+/* display line count or file size in file tree index */
+static const int showlinecount = 1;
 
 static git_repository *repo;
 

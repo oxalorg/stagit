@@ -12,7 +12,6 @@
 #include <git2.h>
 
 #include "compat.h"
-#include "config.h"
 
 static git_repository *repo;
 
