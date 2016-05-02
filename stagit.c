@@ -668,9 +668,7 @@ printcommitatom(FILE *fp, struct commitinfo *ci)
 		fputc('\n', fp);
 		xmlencode(fp, ci->msg, strlen(ci->msg));
 	}
-	fputs("\n</content>\n", fp);
-
-	fputs("</entry>\n", fp);
+	fputs("\n</content>\n</entry>\n", fp);
 }
 
 int
