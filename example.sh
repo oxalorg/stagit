@@ -27,7 +27,7 @@ find . -maxdepth 1 -type d | grep -v "^.$" | sort | while read -r dir; do
 
 	mkdir -p "${curdir}/${d}"
 	cd "${curdir}/${d}"
-	stagit "${reposdir}/${d}"
+	stagit -c ".cache" "${reposdir}/${d}"
 
 	# symlinks
 	ln -sf log.html index.html
