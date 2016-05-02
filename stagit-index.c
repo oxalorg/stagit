@@ -23,6 +23,14 @@ static char description[255] = "Repositories";
 static char *name = "";
 static char owner[255];
 
+#ifndef USE_PLEDGE
+int
+pledge(const char *promises, const char *paths[])
+{
+        return 0;
+}
+#endif
+
 /* Escape characters below as HTML 2.0 / XML 1.0. */
 void
 xmlencode(FILE *fp, const char *s, size_t len)
@@ -153,6 +161,9 @@ main(int argc, char *argv[])
 	FILE *fp;
 	char path[PATH_MAX], repodirabs[PATH_MAX + 1];
 	int i, ret = 0;
+
+	if (pledge("stdio rpath", NULL) == -1)
+		err(1, "pledge");
 
 	if (argc < 2) {
 		fprintf(stderr, "%s [repodir...]\n", argv[0]);

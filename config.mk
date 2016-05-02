@@ -4,6 +4,9 @@
 PREFIX = /usr/local
 MANPREFIX = ${PREFIX}/man
 
+# compiler and linker
+#CC = cc
+
 GITINC = /usr/local/include
 GITLIB = /usr/local/lib
 
@@ -23,6 +26,7 @@ LDFLAGS = -s ${LIBS}
 #CFLAGS = -static -O2 -std=c99 ${INCS}
 #LDFLAGS = -static -s ${LIBS}
 
-CPPFLAGS= -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -D_BSD_SOURCE ${INCS}
-# compiler and linker
-#CC = cc
+CPPFLAGS = -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -D_BSD_SOURCE ${INCS}
+
+# OpenBSD 5.9+: use pledge(2)
+#CPPFLAGS += -DUSE_PLEDGE

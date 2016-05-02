@@ -64,6 +64,14 @@ static char lastoidstr[GIT_OID_HEXSZ + 2]; /* id + newline + nul byte */
 static FILE *rcachefp, *wcachefp;
 static const char *cachefile;
 
+#ifndef USE_PLEDGE
+int
+pledge(const char *promises, const char *paths[])
+{
+	return 0;
+}
+#endif
+
 void
 deltainfo_free(struct deltainfo *di)
 {
@@ -1032,6 +1040,9 @@ main(int argc, char *argv[])
 	char tmppath[64] = "cache.XXXXXXXXXXXX", buf[BUFSIZ];
 	size_t n;
 	int i, fd;
+
+	if (pledge("stdio rpath wpath cpath", NULL) == -1)
+		err(1, "pledge");
 
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] != '-') {
