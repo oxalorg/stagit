@@ -77,6 +77,18 @@ pledge(const char *promises, const char *paths[])
 #endif
 
 void
+joinpath(char *buf, size_t bufsiz, const char *path, const char *path2)
+{
+	int r;
+
+	r = snprintf(buf, bufsiz, "%s%s%s",
+		path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
+	if (r == -1 || (size_t)r >= bufsiz)
+		errx(1, "path truncated: '%s%s%s'",
+			path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
+}
+
+void
 deltainfo_free(struct deltainfo *di)
 {
 	if (!di)
@@ -796,17 +808,12 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 		if (!(entry = git_tree_entry_byindex(tree, i)) ||
 		    !(entryname = git_tree_entry_name(entry)))
 			return -1;
-		r = snprintf(entrypath, sizeof(entrypath), "%s%s%s",
-			 path, path[0] ? "/" : "", entryname);
-		if (r == -1 || (size_t)r >= sizeof(entrypath))
-			errx(1, "path truncated: '%s%s%s'",
-			        path, path[0] ? "/" : "", entryname);
+		joinpath(entrypath, sizeof(entrypath), path, entryname);
 
-		r = snprintf(filepath, sizeof(filepath), "file/%s%s%s.html",
-		         path, path[0] ? "/" : "", entryname);
+		r = snprintf(filepath, sizeof(filepath), "file/%s.html",
+		         entrypath);
 		if (r == -1 || (size_t)r >= sizeof(filepath))
-			errx(1, "path truncated: 'file/%s%s%s.html'",
-			        path, path[0] ? "/" : "", entryname);
+			errx(1, "path truncated: 'file/%s.html'", entrypath);
 
 		if (!git_tree_entry_to_object(&obj, repo, entry)) {
 			switch (git_object_type(obj)) {
@@ -988,18 +995,6 @@ err:
 	free(refs);
 
 	return 0;
-}
-
-void
-joinpath(char *buf, size_t bufsiz, const char *path, const char *path2)
-{
-	int r;
-
-	r = snprintf(buf, bufsiz, "%s%s%s",
-		repodir, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
-	if (r == -1 || (size_t)r >= bufsiz)
-		errx(1, "path truncated: '%s%s%s'",
-			path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
 }
 
 void

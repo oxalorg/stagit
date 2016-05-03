@@ -30,6 +30,18 @@ pledge(const char *promises, const char *paths[])
 }
 #endif
 
+void
+joinpath(char *buf, size_t bufsiz, const char *path, const char *path2)
+{
+	int r;
+
+	r = snprintf(buf, bufsiz, "%s%s%s",
+		path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
+	if (r == -1 || (size_t)r >= bufsiz)
+		errx(1, "path truncated: '%s%s%s'",
+			path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
+}
+
 /* Escape characters below as HTML 2.0 / XML 1.0. */
 void
 xmlencode(FILE *fp, const char *s, size_t len)
@@ -137,18 +149,6 @@ err:
 	free(stripped_name);
 
 	return ret;
-}
-
-void
-joinpath(char *buf, size_t bufsiz, const char *path, const char *path2)
-{
-	int r;
-
-	r = snprintf(buf, bufsiz, "%s%s%s",
-		repodir, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
-	if (r == -1 || (size_t)r >= bufsiz)
-		errx(1, "path truncated: '%s%s%s'",
-			path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
 }
 
 int
