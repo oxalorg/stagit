@@ -62,7 +62,7 @@ printtimeshort(FILE *fp, const git_time *intime)
 	fputs(out, fp);
 }
 
-int
+void
 writeheader(FILE *fp)
 {
 	fputs("<!DOCTYPE html>\n"
@@ -80,14 +80,12 @@ writeheader(FILE *fp)
 	      "<table id=\"index\"><thead>\n"
 	      "<tr><td>Name</td><td>Description</td><td>Owner</td><td>Last commit</td></tr>"
 	      "</thead><tbody>\n", fp);
-
-	return 0;
 }
 
-int
+void
 writefooter(FILE *fp)
 {
-	return !fputs("</tbody>\n</table>\n</div>\n</body>\n</html>\n", fp);
+	fputs("</tbody>\n</table>\n</div>\n</body>\n</html>\n", fp);
 }
 
 int

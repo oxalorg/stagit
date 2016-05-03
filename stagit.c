@@ -57,7 +57,7 @@ static const char *relpath = "";
 static const char *repodir;
 
 static char *name = "";
-static char *stripped_name;
+static char *strippedname;
 static char description[255];
 static char cloneurl[1024];
 static int haslicense, hasreadme, hassubmodules;
@@ -246,27 +246,6 @@ xmlencode(FILE *fp, const char *s, size_t len)
 	}
 }
 
-/* Some implementations of dirname(3) return a pointer to a static
- * internal buffer (OpenBSD). Others modify the contents of `path` (POSIX).
- * This is a wrapper function that is compatible with both versions.
- * The program will error out if dirname(3) failed, this can only happen
- * with the OpenBSD version. */
-char *
-xdirname(const char *path)
-{
-	char *p, *b;
-
-	if (!(p = strdup(path)))
-		err(1, "strdup");
-	if (!(b = dirname(p)))
-		err(1, "dirname");
-	if (!(b = strdup(b)))
-		err(1, "strdup");
-	free(p);
-
-	return b;
-}
-
 int
 mkdirp(const char *path)
 {
@@ -335,7 +314,7 @@ printtimeshort(FILE *fp, const git_time *intime)
 	fputs(out, fp);
 }
 
-int
+void
 writeheader(FILE *fp, const char *title)
 {
 	fputs("<!DOCTYPE html>\n"
@@ -343,9 +322,9 @@ writeheader(FILE *fp, const char *title)
 		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n"
 		"<meta http-equiv=\"Content-Language\" content=\"en\" />\n<title>", fp);
 	xmlencode(fp, title, strlen(title));
-	if (title[0] && stripped_name[0])
+	if (title[0] && strippedname[0])
 		fputs(" - ", fp);
-	xmlencode(fp, stripped_name, strlen(stripped_name));
+	xmlencode(fp, strippedname, strlen(strippedname));
 	if (description[0])
 		fputs(" - ", fp);
 	xmlencode(fp, description, strlen(description));
@@ -357,7 +336,7 @@ writeheader(FILE *fp, const char *title)
 	fprintf(fp, "<a href=\"../%s\"><img src=\"%slogo.png\" alt=\"\" width=\"32\" height=\"32\" /></a>",
 	        relpath, relpath);
 	fputs("</td><td><h1>", fp);
-	xmlencode(fp, stripped_name, strlen(stripped_name));
+	xmlencode(fp, strippedname, strlen(strippedname));
 	fputs("</h1><span class=\"desc\">", fp);
 	xmlencode(fp, description, strlen(description));
 	fputs("</span></td></tr>", fp);
@@ -379,14 +358,12 @@ writeheader(FILE *fp, const char *title)
 	if (haslicense)
 		fprintf(fp, " | <a href=\"%sfile/LICENSE.html\">LICENSE</a>", relpath);
 	fputs("</td></tr></table>\n<hr/>\n<div id=\"content\">\n", fp);
-
-	return 0;
 }
 
-int
+void
 writefooter(FILE *fp)
 {
-	return !fputs("</div>\n</body>\n</html>\n", fp);
+	fputs("</div>\n</body>\n</html>\n", fp);
 }
 
 int
@@ -693,7 +670,7 @@ writeatom(FILE *fp)
 
 	fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 	      "<feed xmlns=\"http://www.w3.org/2005/Atom\">\n<title>", fp);
-	xmlencode(fp, stripped_name, strlen(stripped_name));
+	xmlencode(fp, strippedname, strlen(strippedname));
 	fputs(", branch HEAD</title>\n<subtitle>", fp);
 	xmlencode(fp, description, strlen(description));
 	fputs("</subtitle>\n", fp);
@@ -724,15 +701,14 @@ writeblob(git_object *obj, const char *fpath, const char *filename, git_off_t fi
 	int lc = 0;
 	FILE *fp;
 
-	d = xdirname(fpath);
-	if (mkdirp(d)) {
-		free(d);
+	if (strlcpy(tmp, fpath, sizeof(tmp)) >= sizeof(tmp))
+		errx(1, "path truncated: '%s'", fpath);
+	if (!(d = dirname(tmp)))
+		err(1, "dirname");
+	if (mkdirp(d))
 		return -1;
-	}
-	free(d);
 
-	p = fpath;
-	while (*p) {
+	for (p = fpath; *p; p++) {
 		if (*p == '/' && strlcat(tmp, "../", sizeof(tmp)) >= sizeof(tmp))
 			errx(1, "path truncated: '../%s'", tmp);
 		p++;
@@ -1087,9 +1063,9 @@ main(int argc, char *argv[])
 		name = "";
 
 	/* strip .git suffix */
-	if (!(stripped_name = strdup(name)))
+	if (!(strippedname = strdup(name)))
 		err(1, "strdup");
-	if ((p = strrchr(stripped_name, '.')))
+	if ((p = strrchr(strippedname, '.')))
 		if (!strcmp(p, ".git"))
 			*p = '\0';
 
@@ -1162,9 +1138,8 @@ main(int argc, char *argv[])
 				n = fread(buf, 1, sizeof(buf), rcachefp);
 				if (ferror(rcachefp))
 					err(1, "fread");
-				if (fwrite(buf, 1, n, fp) != n)
-					err(1, "fwrite");
-				if (fwrite(buf, 1, n, wcachefp) != n)
+				if (fwrite(buf, 1, n, fp) != n ||
+				    fwrite(buf, 1, n, wcachefp) != n)
 					err(1, "fwrite");
 			}
 			fclose(rcachefp);
