@@ -462,7 +462,7 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 	fputs("<b>Diffstat:</b>\n<table>", fp);
 	for (i = 0; i < ci->ndeltas; i++) {
 		delta = git_patch_get_delta(ci->deltas[i]->patch);
-		fputs("<tr><td>", fp);
+		fprintf(fp, "<tr><td><a href=\"#h%zu\">", i);
 		xmlencode(fp, delta->old_file.path, strlen(delta->old_file.path));
 		if (strcmp(delta->old_file.path, delta->new_file.path)) {
 			fputs(" -&gt; ", fp);
@@ -482,7 +482,7 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 		memset(&linestr, '+', add);
 		memset(&linestr[add], '-', del);
 
-		fprintf(fp, "</td><td> | </td><td class=\"num\">%zu</td><td><span class=\"i\">",
+		fprintf(fp, "</a></td><td> | </td><td class=\"num\">%zu</td><td><span class=\"i\">",
 		        ci->deltas[i]->addcount + ci->deltas[i]->delcount);
 		fwrite(&linestr, 1, add, fp);
 		fputs("</span><span class=\"d\">", fp);
@@ -499,8 +499,8 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 	for (i = 0; i < ci->ndeltas; i++) {
 		patch = ci->deltas[i]->patch;
 		delta = git_patch_get_delta(patch);
-		fprintf(fp, "<b>diff --git a/<a href=\"%sfile/%s.html\">%s</a> b/<a href=\"%sfile/%s.html\">%s</a></b>\n",
-			relpath, delta->old_file.path, delta->old_file.path,
+		fprintf(fp, "<b>diff --git a/<a id=\"h%zu\" href=\"%sfile/%s.html\">%s</a> b/<a href=\"%sfile/%s.html\">%s</a></b>\n",
+			i, relpath, delta->old_file.path, delta->old_file.path,
 			relpath, delta->new_file.path, delta->new_file.path);
 
 		/* check binary data */
