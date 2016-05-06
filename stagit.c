@@ -297,19 +297,18 @@ printtime(FILE *fp, const git_time *intime)
 {
 	struct tm *intm;
 	time_t t;
-	int offset, sign = '+';
 	char out[32];
 
-	offset = intime->offset * 60;
-	t = (time_t)intime->time + offset;
+	t = (time_t)intime->time + (intime->offset * 60);
 	if (!(intm = gmtime(&t)))
 		return;
 	strftime(out, sizeof(out), "%a %b %e %H:%M:%S", intm);
-	if (offset < 0) {
-		offset = -offset;
-		sign = '-';
-	}
-	fprintf(fp, "%s %c%02d%02d", out, sign, offset / 60, offset % 60);
+	if (intime->offset < 0)
+		fprintf(fp, "%s -%02d%02d", out,
+		            -(intime->offset) / 60, -(intime->offset) % 60);
+	else
+		fprintf(fp, "%s +%02d%02d", out,
+		            intime->offset / 60, intime->offset % 60);
 }
 
 void
