@@ -940,9 +940,8 @@ writerefs(FILE *fp)
 			default:
 				continue;
 			}
-			if (!(id = git_reference_target(r)))
-				goto err;
-			if (git_reference_peel(&obj, r, GIT_OBJ_ANY))
+			if (!git_reference_target(r) ||
+			    git_reference_peel(&obj, r, GIT_OBJ_ANY))
 				goto err;
 			if (!(id = git_object_id(obj)))
 				goto err;
