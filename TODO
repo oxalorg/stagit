@@ -1,6 +1,7 @@
 performance:
-- optimize git_diff_get_stats.
-- speed up generating files.
+- don't recreate files tree for HEAD each time:
+  - idea: update files in tree and commit files with timestamp of commit and
+          compare?
 
 documentation:
 - improve mandoc pages.
