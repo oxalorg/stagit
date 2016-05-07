@@ -22,8 +22,7 @@ the last commit. The
 will store the last commit id and the entries in the HTML table. It is up
 to the user to make sure the state of the
 .Ar cachefile
-is in sync with the history of the repository, for example a
-git push \-\-force can screw this up.
+is in sync with the history of the repository.
 .Pp
 The following files will be written:
 .Bl -tag -width Ds
@@ -38,20 +37,30 @@ each commit links to a page with a diff and diffstat of the commit.
 Lists references of the repository such as branches and tags.
 .El
 .Pp
-For each file in HEAD a file will be written in the format:
+For each entry in HEAD a file will be written in the format:
 file/filepath.html. This file will contain the textual data of the file
-prefixed by line numbers. The file will have the string "binary file"
+prefixed by line numbers. The file will have the string "Binary file"
 if the data is considered to be non-textual.
 .Pp
 For each commit a file will be written in the format:
-commit/commitid.html . This file will contain the diff and diffstat of the
-commit. It will write the string "binary files differ" if the data is
-considered to be non-textual.
+commit/commitid.html. This file will contain the diff and diffstat of the
+commit. It will write the string "Binary files differ" if the data is
+considered to be non-textual. Too large diffs will be suppressed and a string
+"Diff is too large, output suppressed" will be written.
+.Pp
+When a commit HTML file exists it won't be overwritten again, note that if
+you've changed
+.Nm
+or changed one of the metadata files of the repository it is recommended to
+recreate all the output files because it will contain old data. To do this
+remove the output directory and
+.Ar cachefile ,
+then recreate the files.
 .Pp
 The basename of the directory is used as the name. The suffix ".git" is
 removed from the basename, this is commonly used for "bare" repos.
 .Pp
-The content of the follow files specifies the meta data for each repository:
+The content of the follow files specifies the metadata for each repository:
 .Bl -tag -width Ds
 .It .git/description or description (bare repo).
 description
