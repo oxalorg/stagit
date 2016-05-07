@@ -125,7 +125,7 @@ commitinfo_getstats(struct commitinfo *ci)
 
 		delta = git_patch_get_delta(patch);
 
-		/* check binary data */
+		/* skip stats for binary data */
 		if (delta->flags & GIT_DIFF_FLAG_BINARY)
 			continue;
 
@@ -453,7 +453,7 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 	    ci->ndeltas   > 1000   ||
 	    ci->addcount  > 100000 ||
 	    ci->delcount  > 100000) {
-		fprintf(fp, "(diff is too large, output suppressed)");
+		fputs("Diff is too large, output suppressed.\n", fp);
 		return;
 	}
 
@@ -504,7 +504,7 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 
 		/* check binary data */
 		if (delta->flags & GIT_DIFF_FLAG_BINARY) {
-			fputs("Binary files differ\n", fp);
+			fputs("Binary files differ.\n", fp);
 			continue;
 		}
 
@@ -733,7 +733,7 @@ writeblob(git_object *obj, const char *fpath, const char *filename, git_off_t fi
 	fputs("</p><hr/>", fp);
 
 	if (git_blob_is_binary((git_blob *)obj)) {
-		fputs("<p>Binary file</p>\n", fp);
+		fputs("<p>Binary file.</p>\n", fp);
 	} else {
 		lc = writeblobhtml(fp, (git_blob *)obj);
 		if (ferror(fp))
