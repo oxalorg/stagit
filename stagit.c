@@ -722,7 +722,6 @@ writeblob(git_object *obj, const char *fpath, const char *filename, git_off_t fi
 	for (p = fpath, tmp[0] = '\0'; *p; p++) {
 		if (*p == '/' && strlcat(tmp, "../", sizeof(tmp)) >= sizeof(tmp))
 			errx(1, "path truncated: '../%s'", tmp);
-		p++;
 	}
 	relpath = tmp;
 
