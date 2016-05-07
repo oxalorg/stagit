@@ -866,12 +866,10 @@ writefiles(FILE *fp, const git_oid *id, const char *branch)
 	      "<td>Mode</td><td>Name</td><td class=\"num\">Size</td>"
 	      "</tr>\n</thead><tbody>\n", fp);
 
-	if (git_commit_lookup(&commit, repo, id) ||
-	    git_commit_tree(&tree, commit))
-		goto err;
-	ret = writefilestree(fp, tree, branch, "");
+	if (!git_commit_lookup(&commit, repo, id) &&
+	    !git_commit_tree(&tree, commit))
+		ret = writefilestree(fp, tree, branch, "");
 
-err:
 	fputs("</tbody></table>", fp);
 
 	git_commit_free(commit);
