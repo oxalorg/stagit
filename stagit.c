@@ -1085,12 +1085,17 @@ main(int argc, char *argv[])
 	}
 
 	/* check LICENSE */
-	haslicense = !git_revparse_single(&obj, repo, "HEAD:LICENSE");
+	haslicense = (!git_revparse_single(&obj, repo, "HEAD:LICENSE") &&
+		git_object_type(obj) == GIT_OBJ_BLOB);
 	git_object_free(obj);
+
 	/* check README */
-	hasreadme = !git_revparse_single(&obj, repo, "HEAD:README");
+	hasreadme = (!git_revparse_single(&obj, repo, "HEAD:README") &&
+		git_object_type(obj) == GIT_OBJ_BLOB);
 	git_object_free(obj);
-	hassubmodules = !git_revparse_single(&obj, repo, "HEAD:.gitmodules");
+
+	hassubmodules = (!git_revparse_single(&obj, repo, "HEAD:.gitmodules") &&
+		git_object_type(obj) == GIT_OBJ_BLOB);
 	git_object_free(obj);
 
 	/* log for HEAD */
