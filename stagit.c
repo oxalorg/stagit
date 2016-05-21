@@ -883,13 +883,10 @@ refs_cmp(const void *v1, const void *v2)
 {
 	git_reference *r1 = (*(git_reference **)v1);
 	git_reference *r2 = (*(git_reference **)v2);
-	int t1, t2;
+	int r;
 
-	t1 = git_reference_is_branch(r1);
-	t2 = git_reference_is_branch(r2);
-
-	if (t1 != t2)
-		return t1 - t2;
+	if ((r = git_reference_is_branch(r1) - git_reference_is_branch(r2)))
+		return r;
 
 	return strcmp(git_reference_shorthand(r1),
 	              git_reference_shorthand(r2));
