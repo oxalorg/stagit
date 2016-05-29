@@ -1038,10 +1038,13 @@ main(int argc, char *argv[])
 	}
 
 	/* find HEAD */
-	if (git_revparse_single(&obj, repo, "HEAD"))
-		return 1;
-	head = git_object_id(obj);
+	if (!git_revparse_single(&obj, repo, "HEAD"))
+		head = git_object_id(obj);
 	git_object_free(obj);
+
+	/* don't cache if there is no HEAD */
+	if (!head)
+		cachefile = NULL;
 
 	/* use directory name as name */
 	if ((name = strrchr(repodirabs, '/')))
@@ -1138,7 +1141,8 @@ main(int argc, char *argv[])
 		}
 		fclose(wcachefp);
 	} else {
-		writelog(fp, head);
+		if (head)
+			writelog(fp, head);
 	}
 
 	fputs("</tbody></table>", fp);
@@ -1148,7 +1152,8 @@ main(int argc, char *argv[])
 	/* files for HEAD */
 	fp = efopen("files.html", "w");
 	writeheader(fp, "Files");
-	writefiles(fp, head, "HEAD");
+	if (head)
+		writefiles(fp, head, "HEAD");
 	writefooter(fp);
 	fclose(fp);
 
