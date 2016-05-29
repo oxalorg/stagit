@@ -22,12 +22,13 @@ find . -maxdepth 1 -type d | grep -v "^.$" | sort | xargs stagit-index > "${curd
 # make files per repo.
 cd "${reposdir}"
 find . -maxdepth 1 -type d | grep -v "^.$" | sort | while read -r dir; do
-	d=$(basename "${dir}")
+	r=$(basename "${dir}")
+	d=$(basename "${dir}" ".git")
 	printf "%s... " "${d}"
 
 	mkdir -p "${curdir}/${d}"
 	cd "${curdir}/${d}"
-	stagit -c ".cache" "${reposdir}/${d}"
+	stagit -c ".cache" "${reposdir}/${r}"
 
 	# symlinks
 	ln -sf log.html index.html
