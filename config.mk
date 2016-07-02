@@ -12,7 +12,7 @@ GITLIB = /usr/local/lib
 
 # includes and libs
 INCS = -I${GITINC}
-LIBS = -L${GITLIB} -lgit2 -lc
+LIBS = -L${GITLIB} -lgit2
 
 # debug
 #CFLAGS = -fstack-protector-all -O0 -g -std=c99 -Wall -Wextra -pedantic ${INCS}
