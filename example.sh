@@ -12,16 +12,16 @@
 # - mkdir -p htmldir && cd htmldir
 # - sh example.sh
 
+# path must be absolute.
 reposdir="/var/www/domains/git.codemadness.nl/home/src"
 curdir=$(pwd)
 
 # make index.
-cd "${reposdir}"
-find . -maxdepth 1 -type d | grep -v "^.$" | sort | xargs stagit-index > "${curdir}/index.html"
+stagit-index "${reposdir}/"*/ > "${curdir}/index.html"
 
 # make files per repo.
-cd "${reposdir}"
-find . -maxdepth 1 -type d | grep -v "^.$" | sort | while read -r dir; do
+for dir in "${reposdir}/"*/; do
+	# strip .git suffix.
 	r=$(basename "${dir}")
 	d=$(basename "${dir}" ".git")
 	printf "%s... " "${d}"
