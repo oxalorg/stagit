@@ -329,7 +329,7 @@ void
 writeheader(FILE *fp, const char *title)
 {
 	fputs("<!DOCTYPE html>\n"
-		"<html dir=\"ltr\" lang=\"en\">\n<head>\n"
+		"<html>\n<head>\n"
 		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n"
 		"<title>", fp);
 	xmlencode(fp, title, strlen(title));
