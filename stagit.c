@@ -57,7 +57,7 @@ static const char *relpath = "";
 static const char *repodir;
 
 static char *name = "";
-static char *strippedname;
+static char *strippedname = "";
 static char description[255];
 static char cloneurl[1024];
 static int haslicense, hasreadme, hassubmodules;
@@ -790,7 +790,7 @@ filemode(git_filemode_t m)
 }
 
 int
-writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
+writefilestree(FILE *fp, git_tree *tree, const char *path)
 {
 	const git_tree_entry *entry = NULL;
 	git_submodule *module = NULL;
@@ -819,7 +819,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 				break;
 			case GIT_OBJ_TREE:
 				/* NOTE: recurses */
-				ret = writefilestree(fp, (git_tree *)obj, branch,
+				ret = writefilestree(fp, (git_tree *)obj,
 				                     entrypath);
 				git_object_free(obj);
 				if (ret)
@@ -856,7 +856,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *branch, const char *path)
 }
 
 int
-writefiles(FILE *fp, const git_oid *id, const char *branch)
+writefiles(FILE *fp, const git_oid *id)
 {
 	git_tree *tree = NULL;
 	git_commit *commit = NULL;
@@ -868,7 +868,7 @@ writefiles(FILE *fp, const git_oid *id, const char *branch)
 
 	if (!git_commit_lookup(&commit, repo, id) &&
 	    !git_commit_tree(&tree, commit))
-		ret = writefilestree(fp, tree, branch, "");
+		ret = writefilestree(fp, tree, "");
 
 	fputs("</tbody></table>", fp);
 
@@ -1153,7 +1153,7 @@ main(int argc, char *argv[])
 	fp = efopen("files.html", "w");
 	writeheader(fp, "Files");
 	if (head)
-		writefiles(fp, head, "HEAD");
+		writefiles(fp, head);
 	writefooter(fp);
 	fclose(fp);
 

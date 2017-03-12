@@ -16,7 +16,6 @@
 static git_repository *repo;
 
 static const char *relpath = "";
-static const char *repodir;
 
 static char description[255] = "Repositories";
 static char *name = "";
@@ -157,6 +156,7 @@ main(int argc, char *argv[])
 	const git_error *e = NULL;
 	FILE *fp;
 	char path[PATH_MAX], repodirabs[PATH_MAX + 1];
+	const char *repodir;
 	int i, ret = 0;
 
 	if (pledge("stdio rpath", NULL) == -1)
