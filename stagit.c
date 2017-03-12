@@ -177,6 +177,7 @@ commitinfo_free(struct commitinfo *ci)
 	git_tree_free(ci->commit_tree);
 	git_tree_free(ci->parent_tree);
 	git_commit_free(ci->commit);
+	git_commit_free(ci->parent);
 }
 
 struct commitinfo *
