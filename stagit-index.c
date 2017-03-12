@@ -22,11 +22,7 @@ static char *name = "";
 static char owner[255];
 
 #ifndef USE_PLEDGE
-int
-pledge(const char *promises, const char *paths[])
-{
-        return 0;
-}
+#define pledge(p1,p2) 0
 #endif
 
 void
