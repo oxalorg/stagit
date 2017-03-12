@@ -178,6 +178,7 @@ commitinfo_free(struct commitinfo *ci)
 	git_tree_free(ci->parent_tree);
 	git_commit_free(ci->commit);
 	git_commit_free(ci->parent);
+	free(ci);
 }
 
 struct commitinfo *
@@ -221,7 +222,6 @@ commitinfo_getbyoid(const git_oid *id)
 
 err:
 	commitinfo_free(ci);
-	free(ci);
 
 	return NULL;
 }
