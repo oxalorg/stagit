@@ -114,6 +114,7 @@ commitinfo_getstats(struct commitinfo *ci)
 			err(1, "calloc");
 		if (git_patch_from_diff(&patch, ci->diff, i)) {
 			git_patch_free(patch);
+			free(di);
 			goto err;
 		}
 		di->patch = patch;
