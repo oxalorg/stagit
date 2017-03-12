@@ -696,7 +696,7 @@ writeatom(FILE *fp)
 	}
 	git_revwalk_free(w);
 
-	fputs("</feed>", fp);
+	fputs("</feed>\n", fp);
 
 	return 0;
 }
