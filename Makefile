@@ -28,7 +28,7 @@ COMPATOBJ = \
 
 OBJ = ${SRC:.c=.o} ${COMPATOBJ}
 
-all: $(BIN)
+all: ${BIN}
 
 .o:
 	${CC} ${LDFLAGS} -o $@ ${LIBS}
@@ -64,7 +64,7 @@ install: all
 	# installing executable files.
 	mkdir -p ${DESTDIR}${PREFIX}/bin
 	cp -f ${BIN} ${SCRIPTS} ${DESTDIR}${PREFIX}/bin
-	for f in $(BIN) $(SCRIPTS); do chmod 755 ${DESTDIR}${PREFIX}/bin/$$f; done
+	for f in ${BIN} ${SCRIPTS}; do chmod 755 ${DESTDIR}${PREFIX}/bin/$$f; done
 	# installing example files.
 	mkdir -p ${DESTDIR}${PREFIX}/share/${NAME}
 	cp -f style.css\
@@ -76,11 +76,11 @@ install: all
 	# installing manual pages.
 	mkdir -p ${DESTDIR}${MANPREFIX}/man1
 	cp -f ${MAN1} ${DESTDIR}${MANPREFIX}/man1
-	for m in $(MAN1); do chmod 644 ${DESTDIR}${MANPREFIX}/man1/$$m; done
+	for m in ${MAN1}; do chmod 644 ${DESTDIR}${MANPREFIX}/man1/$$m; done
 
 uninstall:
 	# removing executable files and scripts.
-	for f in $(BIN) $(SCRIPTS); do rm -f ${DESTDIR}${PREFIX}/bin/$$f; done
+	for f in ${BIN} ${SCRIPTS}; do rm -f ${DESTDIR}${PREFIX}/bin/$$f; done
 	# removing example files.
 	rm -f \
 		${DESTDIR}${PREFIX}/share/${NAME}/style.css\
@@ -90,6 +90,6 @@ uninstall:
 		${DESTDIR}${PREFIX}/share/${NAME}/README
 	-rmdir ${DESTDIR}${PREFIX}/share/${NAME}
 	# removing manual pages.
-	for m in $(MAN1); do rm -f ${DESTDIR}${MANPREFIX}/man1/$$m; done
+	for m in ${MAN1}; do rm -f ${DESTDIR}${MANPREFIX}/man1/$$m; done
 
 .PHONY: all clean dist install uninstall
