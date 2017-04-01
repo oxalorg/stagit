@@ -380,7 +380,7 @@ writeblobhtml(FILE *fp, const git_blob *blob)
 {
 	off_t i;
 	size_t n = 0;
-	char *nfmt = "<a href=\"#l%d\" id=\"l%d\">%d</a>\n";
+	const char *nfmt = "<a href=\"#l%d\" id=\"l%d\">%d</a>\n";
 	const char *s = git_blob_rawcontent(blob);
 	git_off_t len = git_blob_rawsize(blob);
 
