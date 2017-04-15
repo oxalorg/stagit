@@ -248,7 +248,7 @@ xmlencode(FILE *fp, const char *s, size_t len)
 		switch(*s) {
 		case '<':  fputs("&lt;",   fp); break;
 		case '>':  fputs("&gt;",   fp); break;
-		case '\'': fputs("&apos;", fp); break;
+		case '\'': fputs("&#39;",  fp); break;
 		case '&':  fputs("&amp;",  fp); break;
 		case '"':  fputs("&quot;", fp); break;
 		default:   fputc(*s, fp);
