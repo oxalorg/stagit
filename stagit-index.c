@@ -81,12 +81,14 @@ writeheader(FILE *fp)
 	fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"%sstyle.css\" />\n", relpath);
 	fputs("</head>\n<body>\n", fp);
 	fprintf(fp, "<table>\n<tr><td><img src=\"%slogo.png\" alt=\"\" width=\"32\" height=\"32\" /></td>\n"
-	        "<td><h1>%s</h1><span class=\"desc\">%s</span></td></tr><tr><td></td><td>\n",
-		relpath, name, description);
-	fputs("</td></tr>\n</table>\n<hr/>\n<div id=\"content\">\n"
-	      "<table id=\"index\"><thead>\n"
-	      "<tr><td>Name</td><td>Description</td><td>Owner</td><td>Last commit</td></tr>"
-	      "</thead><tbody>\n", fp);
+	        "<td><span class=\"desc\">", relpath);
+	xmlencode(fp, description, strlen(description));
+	fputs("</span></td></tr><tr><td></td><td>\n"
+		"</td></tr>\n</table>\n<hr/>\n<div id=\"content\">\n"
+		"<table id=\"index\"><thead>\n"
+		"<tr><td><b>Name</b></td><td><b>Description</b></td><td><b>Owner</b></td>"
+		"<td><b>Last commit</b></td></tr>"
+		"</thead><tbody>\n", fp);
 }
 
 void
