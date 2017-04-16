@@ -75,6 +75,7 @@ Features
 - After generating the pages (relatively slow) serving the files is very fast,
   simple and requires little resources (because the content is static), only
   a HTTP file server is required.
+- Usable with text-browsers such as dillo, links, lynx and w3m.
 
 
 Cons
