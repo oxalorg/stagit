@@ -378,7 +378,7 @@ writefooter(FILE *fp)
 int
 writeblobhtml(FILE *fp, const git_blob *blob)
 {
-	size_t n, i, prev;
+	size_t n = 0, i, prev;
 	const char *nfmt = "<a href=\"#l%d\" class=\"line\" id=\"l%d\">%6d</a> ";
 	const char *s = git_blob_rawcontent(blob);
 	git_off_t len = git_blob_rawsize(blob);
@@ -386,7 +386,7 @@ writeblobhtml(FILE *fp, const git_blob *blob)
 	fputs("<pre id=\"blob\">\n", fp);
 
 	if (len > 0) {
-		for (i = 0, prev = 0, n = 0; i < (size_t)len; i++) {
+		for (i = 0, prev = 0; i < (size_t)len; i++) {
 			if (s[i] != '\n')
 				continue;
 			n++;
