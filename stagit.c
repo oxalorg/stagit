@@ -556,11 +556,11 @@ writelogline(FILE *fp, struct commitinfo *ci)
 	fputs("</td><td>", fp);
 	if (ci->author)
 		xmlencode(fp, ci->author->name, strlen(ci->author->name));
-	fputs("</td><td class=\"num\">", fp);
+	fputs("</td><td class=\"num\" align=\"right\">", fp);
 	fprintf(fp, "%zu", ci->filecount);
-	fputs("</td><td class=\"num\">", fp);
+	fputs("</td><td class=\"num\" align=\"right\">", fp);
 	fprintf(fp, "+%zu", ci->addcount);
-	fputs("</td><td class=\"num\">", fp);
+	fputs("</td><td class=\"num\" align=\"right\">", fp);
 	fprintf(fp, "-%zu", ci->delcount);
 	fputs("</td></tr>\n", fp);
 }
@@ -835,7 +835,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *path)
 			fputs(filemode(git_tree_entry_filemode(entry)), fp);
 			fprintf(fp, "</td><td><a href=\"%s%s\">", relpath, filepath);
 			xmlencode(fp, entrypath, strlen(entrypath));
-			fputs("</a></td><td class=\"num\">", fp);
+			fputs("</a></td><td class=\"num\" align=\"right\">", fp);
 			if (showlinecount && lc > 0)
 				fprintf(fp, "%dL", lc);
 			else
@@ -847,7 +847,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *path)
 				relpath);
 			xmlencode(fp, entrypath, strlen(entrypath));
 			git_submodule_free(module);
-			fputs("</a></td><td class=\"num\"></td></tr>\n", fp);
+			fputs("</a></td><td class=\"num\" align=\"right\"></td></tr>\n", fp);
 		}
 	}
 
@@ -862,7 +862,8 @@ writefiles(FILE *fp, const git_oid *id)
 	int ret = -1;
 
 	fputs("<table id=\"files\"><thead>\n<tr>"
-	      "<td>Mode</td><td>Name</td><td class=\"num\">Size</td>"
+	      "<td><b>Mode</b></td><td><b>Name</b></td>"
+	      "<td class=\"num\" align=\"right\"><b>Size</b></td>"
 	      "</tr>\n</thead><tbody>\n", fp);
 
 	if (!git_commit_lookup(&commit, repo, id) &&
@@ -946,9 +947,12 @@ writerefs(FILE *fp)
 
 			/* print header if it has an entry (first). */
 			if (++count == 1) {
-				fprintf(fp, "<h2>%s</h2><table id=\"%s\"><thead>\n<tr><td>Name</td>"
-				      "<td>Last commit date</td><td>Author</td>\n</tr>\n</thead><tbody>\n",
-				      titles[j], ids[j]);
+				fprintf(fp, "<h2>%s</h2><table id=\"%s\">"
+			                "<thead>\n<tr><td><b>Name</b></td>"
+				        "<td><b>Last commit date</b></td>"
+				        "<td><b>Author</b></td>\n</tr>\n"
+				        "</thead><tbody>\n",
+				         titles[j], ids[j]);
 			}
 
 			relpath = "";
@@ -1102,9 +1106,11 @@ main(int argc, char *argv[])
 	relpath = "";
 	mkdir("commit", 0755);
 	writeheader(fp, "Log");
-	fputs("<table id=\"log\"><thead>\n<tr><td>Date</td><td>Commit message</td>"
-		  "<td>Author</td><td class=\"num\">Files</td><td class=\"num\">+</td>"
-		  "<td class=\"num\">-</td></tr>\n</thead><tbody>\n", fp);
+	fputs("<table id=\"log\"><thead>\n<tr><td><b>Date</b></td>"
+	      "<td><b>Commit message</b></td>"
+	      "<td><b>Author</b></td><td class=\"num\" align=\"right\"><b>Files</b></td>"
+	      "<td class=\"num\" align=\"right\"><b>+</b></td>"
+	      "<td class=\"num\" align=\"right\"><b>-</b></td></tr>\n</thead><tbody>\n", fp);
 
 	if (cachefile) {
 		/* read from cache file (does not need to exist) */
