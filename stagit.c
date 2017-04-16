@@ -378,28 +378,31 @@ writefooter(FILE *fp)
 int
 writeblobhtml(FILE *fp, const git_blob *blob)
 {
-	off_t i;
-	size_t n = 0;
-	const char *nfmt = "<a href=\"#l%d\" id=\"l%d\">%d</a>\n";
+	size_t n, i, prev;
+	const char *nfmt = "<a href=\"#l%d\" class=\"line\" id=\"l%d\">%6d</a> ";
 	const char *s = git_blob_rawcontent(blob);
 	git_off_t len = git_blob_rawsize(blob);
 
-	fputs("<table id=\"blob\"><tr><td class=\"num\"><pre>\n", fp);
+	fputs("<pre id=\"blob\">\n", fp);
 
-	if (len) {
-		n++;
-		fprintf(fp, nfmt, n, n, n);
-		for (i = 0; i < len - 1; i++) {
-			if (s[i] == '\n') {
-				n++;
-				fprintf(fp, nfmt, n, n, n);
-			}
+	if (len > 0) {
+		for (i = 0, prev = 0, n = 0; i < (size_t)len; i++) {
+			if (s[i] != '\n')
+				continue;
+			n++;
+			fprintf(fp, nfmt, n, n, n);
+			xmlencode(fp, &s[prev], i - prev + 1);
+			prev = i + 1;
+		}
+		/* trailing data */
+		if ((i - prev) > 0) {
+			n++;
+			fprintf(fp, nfmt, n, n, n);
+			xmlencode(fp, &s[prev], len - prev);
 		}
 	}
 
-	fputs("</pre></td><td><pre>\n", fp);
-	xmlencode(fp, s, (size_t)len);
-	fputs("</pre></td></tr></table>\n", fp);
+	fputs("</pre>\n", fp);
 
 	return n;
 }
@@ -486,7 +489,7 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 		fwrite(&linestr[add], 1, del, fp);
 		fputs("</span></td></tr>\n", fp);
 	}
-	fprintf(fp, "</table>%zu file%s changed, %zu insertion%s(+), %zu deletion%s(-)\n",
+	fprintf(fp, "</table></pre><pre>%zu file%s changed, %zu insertion%s(+), %zu deletion%s(-)\n",
 		ci->filecount, ci->filecount == 1 ? "" : "s",
 	        ci->addcount,  ci->addcount  == 1 ? "" : "s",
 	        ci->delcount,  ci->delcount  == 1 ? "" : "s");
