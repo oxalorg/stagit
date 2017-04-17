@@ -395,7 +395,7 @@ writeblobhtml(FILE *fp, const git_blob *blob)
 			prev = i + 1;
 		}
 		/* trailing data */
-		if ((i - prev) > 0) {
+		if ((len - prev) > 0) {
 			n++;
 			fprintf(fp, nfmt, n, n, n);
 			xmlencode(fp, &s[prev], len - prev);
