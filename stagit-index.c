@@ -75,7 +75,7 @@ writeheader(FILE *fp)
 	fputs("<!DOCTYPE html>\n"
 		"<html dir=\"ltr\" lang=\"en\">\n<head>\n"
 		"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n"
-		"<meta http-equiv=\"Content-Language\" content=\"en\" />\n<title>", fp);
+		"<title>", fp);
 	xmlencode(fp, description, strlen(description));
 	fprintf(fp, "</title>\n<link rel=\"icon\" type=\"image/png\" href=\"%sfavicon.png\" />\n", relpath);
 	fprintf(fp, "<link rel=\"stylesheet\" type=\"text/css\" href=\"%sstyle.css\" />\n", relpath);
