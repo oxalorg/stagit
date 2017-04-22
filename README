@@ -61,6 +61,23 @@ make
 make install
 
 
+Extract owner field from git config
+-----------------------------------
+
+A (hacky) way to extract the gitweb owner for example in the format:
+
+	[gitweb]
+		owner = Name here
+
+Script:
+
+	#!/bin/sh
+	awk '/^[ 	]*owner[ 	]=/ {
+		sub(/^[^=]*=[ 	]*/, "");
+		print $0;
+	}'
+
+
 Features
 --------
 
@@ -86,7 +103,7 @@ Cons
 - Not suitable for repositories with many branches, a quite linear history is
   assumed (from HEAD).
 - Relatively slow to run the first time (about 3 seconds for sbase,
-  1500+ commits), incremental updates after it are faster.
+  1500+ commits), incremental updates are faster.
 - Does not support some of the dynamic features cgit has, like:
   - snapshot tarballs.
   - file tree per commit.

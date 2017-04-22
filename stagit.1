@@ -14,51 +14,58 @@ writes HTML pages for the repository
 .Ar repodir
 to the current directory.
 .Pp
-Optionally the
-.Fl c Ar cachefile
-option can be used to cache the entries of the log page up to the point of
-the last commit. The
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl c Ar cachefile
+Cache the entries of the log page up to the point of
+the last commit.
+The
 .Ar cachefile
-will store the last commit id and the entries in the HTML table. It is up
-to the user to make sure the state of the
+will store the last commit id and the entries in the HTML table.
+It is up to the user to make sure the state of the
 .Ar cachefile
 is in sync with the history of the repository.
+.El
 .Pp
 The following files will be written:
 .Bl -tag -width Ds
 .It atom.xml
 Atom XML feed
 .It files.html
-List of files in the latest HEAD commit, linking to the file.
+List of files in the latest tree, linking to the file.
 .It log.html
 List of commits in order of most recent to old of the commits (top to bottom),
-each commit links to a page with a diff and diffstat of the commit.
+each commit links to a page with a diffstat and diff of the commit.
 .It refs.html
 Lists references of the repository such as branches and tags.
 .El
 .Pp
 For each entry in HEAD a file will be written in the format:
-file/filepath.html. This file will contain the textual data of the file
-prefixed by line numbers. The file will have the string "Binary file"
-if the data is considered to be non-textual.
+file/filepath.html.
+This file will contain the textual data of the file prefixed by line numbers.
+The file will have the string "Binary file" if the data is considered to be
+non-textual.
 .Pp
 For each commit a file will be written in the format:
-commit/commitid.html. This file will contain the diff and diffstat of the
-commit. It will write the string "Binary files differ" if the data is
-considered to be non-textual. Too large diffs will be suppressed and a string
+commit/commitid.html.
+This file will contain the diffstat and diff of the commit.
+It will write the string "Binary files differ" if the data is considered to
+be non-textual.
+Too large diffs will be suppressed and a string
 "Diff is too large, output suppressed" will be written.
 .Pp
 When a commit HTML file exists it won't be overwritten again, note that if
 you've changed
 .Nm
 or changed one of the metadata files of the repository it is recommended to
-recreate all the output files because it will contain old data. To do this
-remove the output directory and
+recreate all the output files because it will contain old data.
+To do this remove the output directory and
 .Ar cachefile ,
 then recreate the files.
 .Pp
-The basename of the directory is used as the name. The suffix ".git" is
-removed from the basename, this is commonly used for "bare" repos.
+The basename of the directory is used as the repository name.
+The suffix ".git" is removed from the basename, this suffix is commonly used
+for "bare" repos.
 .Pp
 The content of the follow files specifies the metadata for each repository:
 .Bl -tag -width Ds
@@ -75,10 +82,10 @@ exists in HEAD a direct link in the menu is made.
 .Pp
 For changing the style of the page you can use the following files:
 .Bl -tag -width Ds
-.It logo.png
-32x32 logo.
 .It favicon.png
 favicon image.
+.It logo.png
+32x32 logo.
 .It style.css
 CSS stylesheet.
 .El

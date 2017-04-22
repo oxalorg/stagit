@@ -10,13 +10,14 @@
 .Sh DESCRIPTION
 .Nm
 will create an index HTML page for the repositories specified and writes
-the HTML data to stdout. The repos in the index are in the same order as
-the arguments
+the HTML data to stdout.
+The repos in the index are in the same order as the arguments
 .Ar repodir
 specified.
 .Pp
-The basename of the directory is used as the name. The suffix ".git" is
-removed from the basename, this is commonly used for "bare" repos.
+The basename of the directory is used as the repository name.
+The suffix ".git" is removed from the basename, this suffix is commonly used
+for "bare" repos.
 .Pp
 The content of the follow files specifies the meta data for each repository:
 .Bl -tag -width Ds
@@ -28,10 +29,10 @@ owner of repository
 .Pp
 For changing the style of the page you can use the following files:
 .Bl -tag -width Ds
-.It logo.png
-32x32 logo.
 .It favicon.png
 favicon image.
+.It logo.png
+32x32 logo.
 .It style.css
 CSS stylesheet.
 .El
