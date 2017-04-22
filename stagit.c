@@ -110,13 +110,10 @@ commitinfo_getstats(struct commitinfo *ci)
 		err(1, "calloc");
 
 	for (i = 0; i < ndeltas; i++) {
+		if (git_patch_from_diff(&patch, ci->diff, i))
+			goto err;
 		if (!(di = calloc(1, sizeof(struct deltainfo))))
 			err(1, "calloc");
-		if (git_patch_from_diff(&patch, ci->diff, i)) {
-			git_patch_free(patch);
-			free(di);
-			goto err;
-		}
 		di->patch = patch;
 		ci->deltas[i] = di;
 
