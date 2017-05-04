@@ -40,8 +40,7 @@ dist:
 	rm -rf ${NAME}-${VERSION}
 	mkdir -p ${NAME}-${VERSION}
 	cp -f ${MAN1} ${HDR} ${SCRIPTS} ${SRC} ${COMPATSRC} ${DOC} \
-		Makefile config.def.h config.mk \
-		favicon.png logo.png style.css \
+		Makefile config.mk favicon.png logo.png style.css \
 		example.sh \
 		${NAME}-${VERSION}
 	# make tarball
