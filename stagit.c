@@ -292,7 +292,7 @@ printtime(FILE *fp, const git_time *intime)
 	t = (time_t)intime->time + (intime->offset * 60);
 	if (!(intm = gmtime(&t)))
 		return;
-	strftime(out, sizeof(out), "%a %b %e %H:%M:%S", intm);
+	strftime(out, sizeof(out), "%a, %e %b %Y %H:%M:%S", intm);
 	if (intime->offset < 0)
 		fprintf(fp, "%s -%02d%02d", out,
 		            -(intime->offset) / 60, -(intime->offset) % 60);
