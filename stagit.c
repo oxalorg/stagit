@@ -46,11 +46,6 @@ struct commitinfo {
 	size_t ndeltas;
 };
 
-/* summary length (bytes) in the log */
-static const unsigned summarylen = 70;
-/* display line count or file size in file tree index */
-static const int showlinecount = 1;
-
 static git_repository *repo;
 
 static const char *relpath = "";
@@ -537,20 +532,13 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 void
 writelogline(FILE *fp, struct commitinfo *ci)
 {
-	size_t len;
-
 	fputs("<tr><td>", fp);
 	if (ci->author)
 		printtimeshort(fp, &(ci->author->when));
 	fputs("</td><td>", fp);
 	if (ci->summary) {
 		fprintf(fp, "<a href=\"%scommit/%s.html\">", relpath, ci->oid);
-		if ((len = strlen(ci->summary)) > summarylen) {
-			xmlencode(fp, ci->summary, summarylen - 1);
-			fputs("…", fp);
-		} else {
-			xmlencode(fp, ci->summary, len);
-		}
+		xmlencode(fp, ci->summary, strlen(ci->summary));
 		fputs("</a>", fp);
 	}
 	fputs("</td><td>", fp);
@@ -836,7 +824,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *path)
 			fprintf(fp, "</td><td><a href=\"%s%s\">", relpath, filepath);
 			xmlencode(fp, entrypath, strlen(entrypath));
 			fputs("</a></td><td class=\"num\" align=\"right\">", fp);
-			if (showlinecount && lc > 0)
+			if (lc > 0)
 				fprintf(fp, "%dL", lc);
 			else
 				fprintf(fp, "%juB", (uintmax_t)filesize);
