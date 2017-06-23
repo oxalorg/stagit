@@ -1,7 +1,0 @@
-performance:
-- don't recreate files tree for HEAD each time:
-  - idea: update files in tree and commit files with timestamp of commit and
-          compare?
-
-documentation:
-- improve mandoc pages.
