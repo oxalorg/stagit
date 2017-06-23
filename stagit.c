@@ -208,8 +208,6 @@ commitinfo_getbyoid(const git_oid *id)
 	opts.flags |= GIT_DIFF_DISABLE_PATHSPEC_MATCH;
 	if (git_diff_tree_to_tree(&(ci->diff), repo, ci->parent_tree, ci->commit_tree, &opts))
 		goto err;
-	if (commitinfo_getstats(ci) == -1)
-		goto err;
 
 	return ci;
 
@@ -575,6 +573,9 @@ writelog(FILE *fp, const git_oid *oid)
 			break;
 		if (!(ci = commitinfo_getbyoid(&id)))
 			break;
+		/* lookup stats: only required here */
+		if (commitinfo_getstats(ci) == -1)
+			goto err;
 
 		writelogline(fp, ci);
 		if (cachefile)
@@ -596,6 +597,7 @@ writelog(FILE *fp, const git_oid *oid)
 			writefooter(fpfile);
 			fclose(fpfile);
 		}
+err:
 		commitinfo_free(ci);
 	}
 	git_revwalk_free(w);
