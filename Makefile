@@ -17,8 +17,7 @@ MAN1 = \
 	stagit-index.1
 DOC = \
 	LICENSE\
-	README\
-	TODO
+	README
 HDR = compat.h
 
 COMPATOBJ = \
