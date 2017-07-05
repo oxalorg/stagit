@@ -78,6 +78,17 @@ Script:
 	}'
 
 
+Create .tar.gz archives by tag
+------------------------------
+	#!/bin/sh
+	name="stagit"
+	mkdir -p archives
+	git tag -l | while read -r t; do
+		f="archives/$name-$t.tar.gz"
+		test -f "$f" || git archive --format tar.gz "$t" -o "$f"
+	done
+
+
 Features
 --------
 
