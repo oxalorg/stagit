@@ -28,7 +28,7 @@ Dependencies
 ------------
 
 - libgit2 (v0.22+).
-- libc (tested with OpenBSD, FreeBSD, glibc and musl).
+- libc (tested with OpenBSD, FreeBSD, Linux: glibc and musl).
 - C compiler (C99).
 - make
 
@@ -64,7 +64,7 @@ make install
 Extract owner field from git config
 -----------------------------------
 
-A (hacky) way to extract the gitweb owner for example in the format:
+A way to extract the gitweb owner for example in the format:
 
 	[gitweb]
 		owner = Name here
@@ -76,6 +76,45 @@ Script:
 		sub(/^[^=]*=[ 	]*/, "");
 		print $0;
 	}'
+
+
+Set clone url for a directory of repos
+--------------------------------------
+	#!/bin/sh
+	cd "$dir"
+	for i in *; do
+		test -d "$i" && echo "git://git.codemadness.org/$i" > "$i/url"
+	done
+
+
+Update files on git push
+------------------------
+
+Using a post-receive hook the static files can be automatically updated.
+Keep in mind git push -f can change the history and the commits may need
+to be recreated. This is because stagit checks if a commit file already
+exists. It also has a cache (-c) option which can conflict with the new
+history. See stagit(1).
+
+git post-receive hook (repo/.git/hooks/post-receive):
+
+	#!/bin/sh
+	# detect git push -f
+	force=0
+	while read -r old new ref; do
+		hasrevs=$(git rev-list "$old" "^$new" | sed 1q)
+		if test -n "$hasrevs"; then
+			force=1
+			break
+		fi
+	done
+
+	# remove commits and .cache on git push -f
+	#if test "$force" = "1"; then
+	# ...
+	#fi
+
+	# see example.sh for normal creation of the files.
 
 
 Create .tar.gz archives by tag
