@@ -2,11 +2,14 @@
 # - Makes index for repositories in a single directory.
 # - Makes static pages for each repository directory.
 #
-# NOTE, things to do manually (once):
+# NOTE, things to do manually (once) before running this script:
 # - copy style.css, logo.png and favicon.png manually, a style.css example
 #   is included.
+#
 # - write clone url, for example "git://git.codemadness.org/dir" to the "url"
 #   file for each repo.
+# - write owner of repo to the "owner" file.
+# - write description in "description" file.
 #
 # Usage:
 # - mkdir -p htmldir && cd htmldir
