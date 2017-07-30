@@ -9,8 +9,8 @@
 # this is the directory of the repo when called from the post-receive script.
 
 name="$1"
-if test "$name" = ""; then
-	name="$(basename $(pwd))"
+if test "${name}" = ""; then
+	name=$(basename $(pwd))
 fi
 
 # config
@@ -23,17 +23,17 @@ destdir="${htmldir}${stagitdir}"
 cachefile=".htmlcache"
 # /config
 
-if ! test -d "$dir"; then
-	echo "$dir does not exist" >&2
+if ! test -d "${dir}"; then
+	echo "${dir} does not exist" >&2
 	exit 1
 fi
-cd "$dir" || exit 1
+cd "${dir}" || exit 1
 
 # detect git push -f
 force=0
 while read -r old new ref; do
-	hasrevs=$(git rev-list "$old" "^$new" | sed 1q)
-	if test -n "$hasrevs"; then
+	hasrevs=$(git rev-list "${old}" "^${new}" | sed 1q)
+	if test -n "${hasrevs}"; then
 		force=1
 		break
 	fi
@@ -47,14 +47,15 @@ printf "[%s] stagit HTML pages... " "${d}"
 mkdir -p "${destdir}/${d}"
 cd "${destdir}/${d}" || exit 1
 
-# remove commits and $cachefile on git push -f, this recreated later on.
-if test "$force" = "1"; then
+# remove commits and ${cachefile} on git push -f, this recreated later on.
+if test "${force}" = "1"; then
 	rm -f "${cachefile}"
 	rm -rf "commit"
 fi
 
 # make index.
 stagit-index "${reposdir}/"*/ > "${destdir}/index.html"
+
 # make pages.
 stagit -c "${cachefile}" "${reposdir}/${r}"
 
@@ -62,4 +63,4 @@ ln -sf log.html index.html
 ln -sf ../style.css style.css
 ln -sf ../logo.png logo.png
 
-printf "done\n"
+echo "done"

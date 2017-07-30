@@ -114,7 +114,7 @@ git post-receive hook (repo/.git/hooks/post-receive):
 	# ...
 	#fi
 
-	# see example.sh for normal creation of the files.
+	# see example_create.sh for normal creation of the files.
 
 
 Create .tar.gz archives by tag

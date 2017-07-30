@@ -13,11 +13,11 @@
 #
 # Usage:
 # - mkdir -p htmldir && cd htmldir
-# - sh example.sh
+# - sh example_create.sh
 
 # path must be absolute.
 reposdir="/var/www/domains/git.codemadness.nl/home/src"
-curdir=$(pwd)
+curdir="$(pwd)"
 
 # make index.
 stagit-index "${reposdir}/"*/ > "${curdir}/index.html"
@@ -39,5 +39,5 @@ for dir in "${reposdir}/"*/; do
 	ln -sf ../logo.png logo.png
 	ln -sf ../favicon.png favicon.png
 
-	printf "done\n"
+	echo "done"
 done
