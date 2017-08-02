@@ -1,7 +1,7 @@
 include config.mk
 
 NAME = stagit
-VERSION = 0.5
+VERSION = 0.6
 SRC = \
 	stagit.c\
 	stagit-index.c
