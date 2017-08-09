@@ -32,6 +32,8 @@ cd "${dir}" || exit 1
 # detect git push -f
 force=0
 while read -r old new ref; do
+	test "${old}" = "0000000000000000000000000000000000000000" && continue
+
 	hasrevs=$(git rev-list "${old}" "^${new}" | sed 1q)
 	if test -n "${hasrevs}"; then
 		force=1
