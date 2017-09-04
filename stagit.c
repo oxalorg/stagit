@@ -1094,7 +1094,7 @@ main(int argc, char *argv[])
 	/* log for HEAD */
 	fp = efopen("log.html", "w");
 	relpath = "";
-	mkdir("commit", 0755);
+	mkdir("commit", S_IRWXU | S_IRWXG | S_IRWXO);
 	writeheader(fp, "Log");
 	fputs("<table id=\"log\"><thead>\n<tr><td><b>Date</b></td>"
 	      "<td><b>Commit message</b></td>"
