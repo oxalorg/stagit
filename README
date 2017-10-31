@@ -149,15 +149,24 @@ Cons
 ----
 
 - Not suitable for large repositories (2000+ commits), because diffstats are
-  an expensive operation.
+  an expensive operation, the cache (-c flag) is a workaround for this in
+  some cases.
+- Not suitable for large repositories with many files, because all files are
+  written for each execution of stagit. This is because stagit shows the lines
+  of textfiles and there is no "cache" for file metadata (this would add more
+  complexity to the code).
 - Not suitable for repositories with many branches, a quite linear history is
   assumed (from HEAD).
+
+  In these cases it is better to just use cgit or possibly change stagit to
+  run as a CGI program.
+
 - Relatively slow to run the first time (about 3 seconds for sbase,
   1500+ commits), incremental updates are faster.
 - Does not support some of the dynamic features cgit has, like:
-  - snapshot tarballs.
-  - file tree per commit.
-  - history log of branches diverged from HEAD.
-  - stats (git shortlog -s).
+  - Snapshot tarballs per commit.
+  - File tree per commit.
+  - History log of branches diverged from HEAD.
+  - Stats (git shortlog -s).
 
-  this is by design, just use git locally.
+  This is by design, just use git locally.
