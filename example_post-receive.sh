@@ -8,6 +8,10 @@
 # if name is not set the basename of the current directory is used,
 # this is the directory of the repo when called from the post-receive script.
 
+# NOTE: needs to be set for correct locale (expects UTF-8) otherwise the
+#       default is LC_CTYPE="POSIX".
+export LC_CTYPE="en_US.UTF-8"
+
 name="$1"
 if test "${name}" = ""; then
 	name=$(basename $(pwd))
