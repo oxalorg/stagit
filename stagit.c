@@ -1,4 +1,5 @@
 #include <sys/stat.h>
+#include <sys/types.h>
 
 #include <err.h>
 #include <errno.h>
@@ -995,6 +996,7 @@ main(int argc, char *argv[])
 	git_object *obj = NULL;
 	const git_oid *head = NULL;
 	const git_error *e = NULL;
+	mode_t mask;
 	FILE *fp, *fpread;
 	char path[PATH_MAX], repodirabs[PATH_MAX + 1], *p;
 	char tmppath[64] = "cache.XXXXXXXXXXXX", buf[BUFSIZ];
@@ -1165,8 +1167,14 @@ main(int argc, char *argv[])
 	fclose(fp);
 
 	/* rename new cache file on success */
-	if (cachefile && rename(tmppath, cachefile))
-		err(1, "rename: '%s' to '%s'", tmppath, cachefile);
+	if (cachefile) {
+		if (rename(tmppath, cachefile))
+			err(1, "rename: '%s' to '%s'", tmppath, cachefile);
+		umask((mask = umask(0)));
+		if (chmod(cachefile,
+		    (S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH) & ~mask))
+			err(1, "chmod: '%s'", cachefile);
+	}
 
 	/* cleanup */
 	git_repository_free(repo);
