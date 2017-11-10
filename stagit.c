@@ -223,7 +223,7 @@ efopen(const char *name, const char *flags)
 	FILE *fp;
 
 	if (!(fp = fopen(name, flags)))
-		err(1, "fopen");
+		err(1, "fopen: '%s'", name);
 
 	return fp;
 }
@@ -1115,7 +1115,7 @@ main(int argc, char *argv[])
 		if ((fd = mkstemp(tmppath)) == -1)
 			err(1, "mkstemp");
 		if (!(wcachefp = fdopen(fd, "w")))
-			err(1, "fdopen");
+			err(1, "fdopen: '%s'", tmppath);
 		/* write last commit id (HEAD) */
 		git_oid_tostr(buf, sizeof(buf), head);
 		fprintf(wcachefp, "%s\n", buf);
