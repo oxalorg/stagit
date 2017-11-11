@@ -38,7 +38,7 @@ all: ${BIN}
 dist:
 	rm -rf ${NAME}-${VERSION}
 	mkdir -p ${NAME}-${VERSION}
-	cp -f ${MAN1} ${HDR} ${SCRIPTS} ${SRC} ${COMPATSRC} ${DOC} \
+	cp -f ${MAN1} ${HDR} ${SRC} ${COMPATSRC} ${DOC} \
 		Makefile config.mk favicon.png logo.png style.css \
 		example_create.sh example_post-receive.sh \
 		${NAME}-${VERSION}
@@ -61,8 +61,8 @@ clean:
 install: all
 	# installing executable files.
 	mkdir -p ${DESTDIR}${PREFIX}/bin
-	cp -f ${BIN} ${SCRIPTS} ${DESTDIR}${PREFIX}/bin
-	for f in ${BIN} ${SCRIPTS}; do chmod 755 ${DESTDIR}${PREFIX}/bin/$$f; done
+	cp -f ${BIN} ${DESTDIR}${PREFIX}/bin
+	for f in ${BIN}; do chmod 755 ${DESTDIR}${PREFIX}/bin/$$f; done
 	# installing example files.
 	mkdir -p ${DESTDIR}${PREFIX}/share/${NAME}
 	cp -f style.css\
@@ -78,8 +78,8 @@ install: all
 	for m in ${MAN1}; do chmod 644 ${DESTDIR}${MANPREFIX}/man1/$$m; done
 
 uninstall:
-	# removing executable files and scripts.
-	for f in ${BIN} ${SCRIPTS}; do rm -f ${DESTDIR}${PREFIX}/bin/$$f; done
+	# removing executable files.
+	for f in ${BIN}; do rm -f ${DESTDIR}${PREFIX}/bin/$$f; done
 	# removing example files.
 	rm -f \
 		${DESTDIR}${PREFIX}/share/${NAME}/style.css\
