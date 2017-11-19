@@ -1003,7 +1003,7 @@ main(int argc, char *argv[])
 	size_t n;
 	int i, fd;
 
-	if (pledge("stdio rpath wpath cpath", NULL) == -1)
+	if (pledge("stdio rpath wpath cpath fattr", NULL) == -1)
 		err(1, "pledge");
 
 	for (i = 1; i < argc; i++) {
@@ -1017,6 +1017,8 @@ main(int argc, char *argv[])
 			cachefile = argv[++i];
 		}
 	}
+	if (!cachefile && pledge("stdio rpath wpath cpath", NULL) == -1)
+		err(1, "pledge");
 	if (!repodir)
 		usage(argv[0]);
 
@@ -1036,10 +1038,6 @@ main(int argc, char *argv[])
 	if (!git_revparse_single(&obj, repo, "HEAD"))
 		head = git_object_id(obj);
 	git_object_free(obj);
-
-	/* don't cache if there is no HEAD */
-	if (!head)
-		cachefile = NULL;
 
 	/* use directory name as name */
 	if ((name = strrchr(repodirabs, '/')))
@@ -1104,7 +1102,7 @@ main(int argc, char *argv[])
 	      "<td class=\"num\" align=\"right\"><b>+</b></td>"
 	      "<td class=\"num\" align=\"right\"><b>-</b></td></tr>\n</thead><tbody>\n", fp);
 
-	if (cachefile) {
+	if (cachefile && head) {
 		/* read from cache file (does not need to exist) */
 		if ((rcachefp = fopen(cachefile, "r"))) {
 			if (!fgets(lastoidstr, sizeof(lastoidstr), rcachefp))
@@ -1167,7 +1165,7 @@ main(int argc, char *argv[])
 	fclose(fp);
 
 	/* rename new cache file on success */
-	if (cachefile) {
+	if (cachefile && head) {
 		if (rename(tmppath, cachefile))
 			err(1, "rename: '%s' to '%s'", tmppath, cachefile);
 		umask((mask = umask(0)));
