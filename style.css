@@ -1,7 +1,7 @@
 body {
-	font-family: monospace;
 	color: #000;
 	background-color: #fff;
+	font-family: monospace;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -39,8 +39,8 @@ table td {
 }
 
 #content table td {
-	white-space: nowrap;
 	vertical-align: top;
+	white-space: nowrap;
 }
 
 #branches tr:hover td,
