@@ -1,4 +1,4 @@
-.Dd May 1, 2016
+.Dd Januari 21, 2018
 .Dt STAGIT 1
 .Os
 .Sh NAME
@@ -7,6 +7,7 @@
 .Sh SYNOPSIS
 .Nm
 .Op Fl c Ar cachefile
+.Op Fl l Ar commits
 .Ar repodir
 .Sh DESCRIPTION
 .Nm
@@ -25,7 +26,18 @@ will store the last commit id and the entries in the HTML table.
 It is up to the user to make sure the state of the
 .Ar cachefile
 is in sync with the history of the repository.
+.It Fl l Ar commits
+Write a maximum number of
+.Ar commits
+to the log.html file only.
+However the commit files are written as usual.
 .El
+.Pp
+The options
+.Fl c
+and
+.Fl l
+cannot be used at the same time.
 .Pp
 The following files will be written:
 .Bl -tag -width Ds

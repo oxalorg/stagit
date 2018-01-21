@@ -57,6 +57,7 @@ static char *strippedname = "";
 static char description[255];
 static char cloneurl[1024];
 static int haslicense, hasreadme, hassubmodules;
+static long long nlogcommits = -1; /* < 0 indicates not used */
 
 /* cache */
 static git_oid lastoid;
@@ -558,7 +559,7 @@ writelog(FILE *fp, const git_oid *oid)
 	struct commitinfo *ci;
 	git_revwalk *w = NULL;
 	git_oid id;
-	char path[PATH_MAX];
+	char path[PATH_MAX], oidstr[GIT_OID_HEXSZ + 1];
 	FILE *fpfile;
 	int r;
 
@@ -572,24 +573,37 @@ writelog(FILE *fp, const git_oid *oid)
 
 		if (cachefile && !memcmp(&id, &lastoid, sizeof(id)))
 			break;
+
+		git_oid_tostr(oidstr, sizeof(oidstr), &id);
+		r = snprintf(path, sizeof(path), "commit/%s.html", oidstr);
+		if (r == -1 || (size_t)r >= sizeof(path))
+			errx(1, "path truncated: 'commit/%s.html'", oidstr);
+		r = access(path, F_OK);
+
+		/* optimization: if there are no log lines to write and
+		   the commit file already exists: skip the diffstat */
+		if (!nlogcommits && !r)
+			continue;
+
 		if (!(ci = commitinfo_getbyoid(&id)))
 			break;
-		/* lookup stats: only required here */
+		/* diffstat: for stagit HTML required for the log.html line */
 		if (commitinfo_getstats(ci) == -1)
 			goto err;
 
-		writelogline(fp, ci);
+		if (nlogcommits < 0) {
+			writelogline(fp, ci);
+		} else if (nlogcommits > 0) {
+			writelogline(fp, ci);
+			nlogcommits--;
+		}
+
 		if (cachefile)
 			writelogline(wcachefp, ci);
 
-		relpath = "../";
-
-		r = snprintf(path, sizeof(path), "commit/%s.html", ci->oid);
-		if (r == -1 || (size_t)r >= sizeof(path))
-			errx(1, "path truncated: 'commit/%s.html'", ci->oid);
-
 		/* check if file exists if so skip it */
-		if (access(path, F_OK)) {
+		if (r) {
+			relpath = "../";
 			fpfile = efopen(path, "w");
 			writeheader(fpfile, ci->summary);
 			fputs("<pre>", fpfile);
@@ -986,7 +1000,7 @@ err:
 void
 usage(char *argv0)
 {
-	fprintf(stderr, "%s [-c cachefile] repodir\n", argv0);
+	fprintf(stderr, "%s [-c cachefile] [-l commits] repodir\n", argv0);
 	exit(1);
 }
 
@@ -1012,9 +1026,20 @@ main(int argc, char *argv[])
 				usage(argv[0]);
 			repodir = argv[i];
 		} else if (argv[i][1] == 'c') {
-			if (i + 1 >= argc)
+			if (nlogcommits > 0 || i + 1 >= argc)
 				usage(argv[0]);
 			cachefile = argv[++i];
+		} else if (argv[i][1] == 'l') {
+			if (cachefile || i + 1 >= argc)
+				usage(argv[0]);
+			errno = 0;
+			nlogcommits = strtoll(argv[++i], &p, 10);
+			if (argv[i][0] == '\0' || *p != '\0' ||
+			    nlogcommits <= 0)
+				usage(argv[0]);
+			if (errno == ERANGE && (nlogcommits == LLONG_MAX ||
+			    nlogcommits == LLONG_MIN))
+				usage(argv[0]);
 		}
 	}
 	if (!cachefile && pledge("stdio rpath wpath cpath", NULL) == -1)
