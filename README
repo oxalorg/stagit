@@ -123,8 +123,14 @@ Create .tar.gz archives by tag
 	name="stagit"
 	mkdir -p archives
 	git tag -l | while read -r t; do
-		f="archives/$name-$t.tar.gz"
-		test -f "$f" || git archive --format tar.gz "$t" -o "$f"
+		f="archives/${name}-$(echo "${t}" | tr '/' '_').tar.gz"
+		test -f "${f}" && continue
+		git archive \
+			--format tar.gz \
+			--prefix "${t}/" \
+			-o "${f}" \
+			-- \
+			"${t}"
 	done
 
 
