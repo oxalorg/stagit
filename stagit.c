@@ -87,7 +87,7 @@ deltainfo_free(struct deltainfo *di)
 	if (!di)
 		return;
 	git_patch_free(di->patch);
-	di->patch = NULL;
+	memset(di, 0, sizeof(*di));
 	free(di);
 }
 
@@ -95,12 +95,27 @@ int
 commitinfo_getstats(struct commitinfo *ci)
 {
 	struct deltainfo *di;
+	git_diff_options opts;
 	const git_diff_delta *delta;
 	const git_diff_hunk *hunk;
 	const git_diff_line *line;
 	git_patch *patch = NULL;
 	size_t ndeltas, nhunks, nhunklines;
 	size_t i, j, k;
+
+	if (git_tree_lookup(&(ci->commit_tree), repo, git_commit_tree_id(ci->commit)))
+		goto err;
+	if (!git_commit_parent(&(ci->parent), ci->commit, 0)) {
+		if (git_tree_lookup(&(ci->parent_tree), repo, git_commit_tree_id(ci->parent))) {
+			ci->parent = NULL;
+			ci->parent_tree = NULL;
+		}
+	}
+
+	git_diff_init_options(&opts, GIT_DIFF_OPTIONS_VERSION);
+	opts.flags |= GIT_DIFF_DISABLE_PATHSPEC_MATCH;
+	if (git_diff_tree_to_tree(&(ci->diff), repo, ci->parent_tree, ci->commit_tree, &opts))
+		goto err;
 
 	ndeltas = git_diff_num_deltas(ci->diff);
 	if (ndeltas && !(ci->deltas = calloc(ndeltas, sizeof(struct deltainfo *))))
@@ -143,6 +158,15 @@ commitinfo_getstats(struct commitinfo *ci)
 	return 0;
 
 err:
+	git_diff_free(ci->diff);
+	ci->diff = NULL;
+	git_tree_free(ci->commit_tree);
+	ci->commit_tree = NULL;
+	git_tree_free(ci->parent_tree);
+	ci->parent_tree = NULL;
+	git_commit_free(ci->parent);
+	ci->parent = NULL;
+
 	if (ci->deltas)
 		for (i = 0; i < ci->ndeltas; i++)
 			deltainfo_free(ci->deltas[i]);
@@ -166,13 +190,14 @@ commitinfo_free(struct commitinfo *ci)
 	if (ci->deltas)
 		for (i = 0; i < ci->ndeltas; i++)
 			deltainfo_free(ci->deltas[i]);
+
 	free(ci->deltas);
-	ci->deltas = NULL;
 	git_diff_free(ci->diff);
 	git_tree_free(ci->commit_tree);
 	git_tree_free(ci->parent_tree);
 	git_commit_free(ci->commit);
 	git_commit_free(ci->parent);
+	memset(ci, 0, sizeof(*ci));
 	free(ci);
 }
 
@@ -180,7 +205,6 @@ struct commitinfo *
 commitinfo_getbyoid(const git_oid *id)
 {
 	struct commitinfo *ci;
-	git_diff_options opts;
 
 	if (!(ci = calloc(1, sizeof(struct commitinfo))))
 		err(1, "calloc");
@@ -196,20 +220,6 @@ commitinfo_getbyoid(const git_oid *id)
 	ci->committer = git_commit_committer(ci->commit);
 	ci->summary = git_commit_summary(ci->commit);
 	ci->msg = git_commit_message(ci->commit);
-
-	if (git_tree_lookup(&(ci->commit_tree), repo, git_commit_tree_id(ci->commit)))
-		goto err;
-	if (!git_commit_parent(&(ci->parent), ci->commit, 0)) {
-		if (git_tree_lookup(&(ci->parent_tree), repo, git_commit_tree_id(ci->parent))) {
-			ci->parent = NULL;
-			ci->parent_tree = NULL;
-		}
-	}
-
-	git_diff_init_options(&opts, GIT_DIFF_OPTIONS_VERSION);
-	opts.flags |= GIT_DIFF_DISABLE_PATHSPEC_MATCH;
-	if (git_diff_tree_to_tree(&(ci->diff), repo, ci->parent_tree, ci->commit_tree, &opts))
-		goto err;
 
 	return ci;
 
