@@ -1027,9 +1027,6 @@ main(int argc, char *argv[])
 	size_t n;
 	int i, fd;
 
-	if (pledge("stdio rpath wpath cpath fattr", NULL) == -1)
-		err(1, "pledge");
-
 	for (i = 1; i < argc; i++) {
 		if (argv[i][0] != '-') {
 			if (repodir)
@@ -1052,8 +1049,6 @@ main(int argc, char *argv[])
 				usage(argv[0]);
 		}
 	}
-	if (!cachefile && pledge("stdio rpath wpath cpath", NULL) == -1)
-		err(1, "pledge");
 	if (!repodir)
 		usage(argv[0]);
 
@@ -1061,6 +1056,14 @@ main(int argc, char *argv[])
 		err(1, "realpath");
 
 	git_libgit2_init();
+
+	if (cachefile) {
+		if (pledge("stdio rpath wpath cpath fattr", NULL) == -1)
+			err(1, "pledge");
+	} else {
+		if (pledge("stdio rpath wpath cpath", NULL) == -1)
+			err(1, "pledge");
+	}
 
 	if (git_repository_open_ext(&repo, repodir,
 		GIT_REPOSITORY_OPEN_NO_SEARCH, NULL) < 0) {
