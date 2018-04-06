@@ -157,14 +157,15 @@ main(int argc, char *argv[])
 	const char *repodir;
 	int i, ret = 0;
 
-	if (pledge("stdio rpath", NULL) == -1)
-		err(1, "pledge");
-
 	if (argc < 2) {
 		fprintf(stderr, "%s [repodir...]\n", argv[0]);
 		return 1;
 	}
+
 	git_libgit2_init();
+
+	if (pledge("stdio rpath", NULL) == -1)
+		err(1, "pledge");
 
 	writeheader(stdout);
 
