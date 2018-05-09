@@ -1010,7 +1010,7 @@ err:
 void
 usage(char *argv0)
 {
-	fprintf(stderr, "%s [-c cachefile] [-l commits] repodir\n", argv0);
+	fprintf(stderr, "%s [-c cachefile | -l commits] repodir\n", argv0);
 	exit(1);
 }
 
