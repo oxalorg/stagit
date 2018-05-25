@@ -65,10 +65,6 @@ static char lastoidstr[GIT_OID_HEXSZ + 2]; /* id + newline + nul byte */
 static FILE *rcachefp, *wcachefp;
 static const char *cachefile;
 
-#ifndef USE_PLEDGE
-#define pledge(p1,p2) 0
-#endif
-
 void
 joinpath(char *buf, size_t bufsiz, const char *path, const char *path2)
 {
@@ -1057,6 +1053,7 @@ main(int argc, char *argv[])
 
 	git_libgit2_init();
 
+#ifdef __OpenBSD__
 	if (cachefile) {
 		if (pledge("stdio rpath wpath cpath fattr", NULL) == -1)
 			err(1, "pledge");
@@ -1064,6 +1061,7 @@ main(int argc, char *argv[])
 		if (pledge("stdio rpath wpath cpath", NULL) == -1)
 			err(1, "pledge");
 	}
+#endif
 
 	if (git_repository_open_ext(&repo, repodir,
 		GIT_REPOSITORY_OPEN_NO_SEARCH, NULL) < 0) {

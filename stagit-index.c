@@ -21,10 +21,6 @@ static char description[255] = "Repositories";
 static char *name = "";
 static char owner[255];
 
-#ifndef USE_PLEDGE
-#define pledge(p1,p2) 0
-#endif
-
 void
 joinpath(char *buf, size_t bufsiz, const char *path, const char *path2)
 {
@@ -164,8 +160,10 @@ main(int argc, char *argv[])
 
 	git_libgit2_init();
 
+#ifdef __OpenBSD__
 	if (pledge("stdio rpath", NULL) == -1)
 		err(1, "pledge");
+#endif
 
 	writeheader(stdout);
 
