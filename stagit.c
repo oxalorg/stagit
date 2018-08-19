@@ -1042,10 +1042,7 @@ main(int argc, char *argv[])
 			errno = 0;
 			nlogcommits = strtoll(argv[++i], &p, 10);
 			if (argv[i][0] == '\0' || *p != '\0' ||
-			    nlogcommits <= 0)
-				usage(argv[0]);
-			if (errno == ERANGE && (nlogcommits == LLONG_MAX ||
-			    nlogcommits == LLONG_MIN))
+			    nlogcommits <= 0 || errno)
 				usage(argv[0]);
 		}
 	}
