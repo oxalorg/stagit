@@ -602,6 +602,10 @@ writelog(FILE *fp, const git_oid *oid)
 		} else if (nlogcommits > 0) {
 			writelogline(fp, ci);
 			nlogcommits--;
+			if (!nlogcommits && ci->parentoid[0])
+				fputs("<tr><td></td><td colspan=\"5\">"
+				      "More commits remaining [...]</td>"
+				      "</tr>\n", fp);
 		}
 
 		if (cachefile)
