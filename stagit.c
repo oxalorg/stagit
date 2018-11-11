@@ -92,6 +92,7 @@ commitinfo_getstats(struct commitinfo *ci)
 {
 	struct deltainfo *di;
 	git_diff_options opts;
+	git_diff_find_options fopts;
 	const git_diff_delta *delta;
 	const git_diff_hunk *hunk;
 	const git_diff_line *line;
@@ -113,6 +114,12 @@ commitinfo_getstats(struct commitinfo *ci)
 	if (git_diff_tree_to_tree(&(ci->diff), repo, ci->parent_tree, ci->commit_tree, &opts))
 		goto err;
 
+	if (git_diff_find_init_options(&fopts, GIT_DIFF_FIND_OPTIONS_VERSION))
+		goto err;
+	fopts.flags |= GIT_DIFF_FIND_RENAMES | GIT_DIFF_FIND_COPIES;
+	if (git_diff_find_similar(ci->diff, &fopts))
+		goto err;
+
 	ndeltas = git_diff_num_deltas(ci->diff);
 	if (ndeltas && !(ci->deltas = calloc(ndeltas, sizeof(struct deltainfo *))))
 		err(1, "calloc");
@@ -120,6 +127,7 @@ commitinfo_getstats(struct commitinfo *ci)
 	for (i = 0; i < ndeltas; i++) {
 		if (git_patch_from_diff(&patch, ci->diff, i))
 			goto err;
+
 		if (!(di = calloc(1, sizeof(struct deltainfo))))
 			err(1, "calloc");
 		di->patch = patch;
@@ -460,6 +468,7 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 	fputs("<b>Diffstat:</b>\n<table>", fp);
 	for (i = 0; i < ci->ndeltas; i++) {
 		delta = git_patch_get_delta(ci->deltas[i]->patch);
+
 		fprintf(fp, "<tr><td><a href=\"#h%zu\">", i);
 		xmlencode(fp, delta->old_file.path, strlen(delta->old_file.path));
 		if (strcmp(delta->old_file.path, delta->new_file.path)) {
