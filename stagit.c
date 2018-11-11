@@ -56,12 +56,16 @@ static char *name = "";
 static char *strippedname = "";
 static char description[255];
 static char cloneurl[1024];
-static int haslicense, hasreadme, hassubmodules;
+static char *submodules;
+static char *licensefiles[] = { "HEAD:LICENSE", "HEAD:LICENSE.md", "HEAD:COPYING" };
+static char *license;
+static char *readmefiles[] = { "HEAD:README", "HEAD:README.md" };
+static char *readme;
 static long long nlogcommits = -1; /* < 0 indicates not used */
 
 /* cache */
 static git_oid lastoid;
-static char lastoidstr[GIT_OID_HEXSZ + 2]; /* id + newline + nul byte */
+static char lastoidstr[GIT_OID_HEXSZ + 2]; /* id + newline + NUL byte */
 static FILE *rcachefp, *wcachefp;
 static const char *cachefile;
 
@@ -366,12 +370,15 @@ writeheader(FILE *fp, const char *title)
 	fprintf(fp, "<a href=\"%slog.html\">Log</a> | ", relpath);
 	fprintf(fp, "<a href=\"%sfiles.html\">Files</a> | ", relpath);
 	fprintf(fp, "<a href=\"%srefs.html\">Refs</a>", relpath);
-	if (hassubmodules)
-		fprintf(fp, " | <a href=\"%sfile/.gitmodules.html\">Submodules</a>", relpath);
-	if (hasreadme)
-		fprintf(fp, " | <a href=\"%sfile/README.html\">README</a>", relpath);
-	if (haslicense)
-		fprintf(fp, " | <a href=\"%sfile/LICENSE.html\">LICENSE</a>", relpath);
+	if (submodules)
+		fprintf(fp, " | <a href=\"%sfile/%s.html\">Submodules</a>",
+		        relpath, submodules);
+	if (readme)
+		fprintf(fp, " | <a href=\"%sfile/%s.html\">README</a>",
+		        relpath, readme);
+	if (license)
+		fprintf(fp, " | <a href=\"%sfile/%s.html\">LICENSE</a>",
+		        relpath, license);
 	fputs("</td></tr></table>\n<hr/>\n<div id=\"content\">\n", fp);
 }
 
@@ -1124,17 +1131,24 @@ main(int argc, char *argv[])
 	}
 
 	/* check LICENSE */
-	haslicense = (!git_revparse_single(&obj, repo, "HEAD:LICENSE") &&
-		git_object_type(obj) == GIT_OBJ_BLOB);
-	git_object_free(obj);
+	for (i = 0; i < sizeof(licensefiles) / sizeof(*licensefiles) && !license; i++) {
+		if (!git_revparse_single(&obj, repo, licensefiles[i]) &&
+		    git_object_type(obj) == GIT_OBJ_BLOB)
+			license = licensefiles[i] + strlen("HEAD:");
+		git_object_free(obj);
+	}
 
 	/* check README */
-	hasreadme = (!git_revparse_single(&obj, repo, "HEAD:README") &&
-		git_object_type(obj) == GIT_OBJ_BLOB);
-	git_object_free(obj);
+	for (i = 0; i < sizeof(readmefiles) / sizeof(*readmefiles) && !readme; i++) {
+		if (!git_revparse_single(&obj, repo, readmefiles[i]) &&
+		    git_object_type(obj) == GIT_OBJ_BLOB)
+			readme = readmefiles[i] + strlen("HEAD:");
+		git_object_free(obj);
+	}
 
-	hassubmodules = (!git_revparse_single(&obj, repo, "HEAD:.gitmodules") &&
-		git_object_type(obj) == GIT_OBJ_BLOB);
+	if (!git_revparse_single(&obj, repo, "HEAD:.gitmodules") &&
+	    git_object_type(obj) == GIT_OBJ_BLOB)
+		submodules = ".gitmodules";
 	git_object_free(obj);
 
 	/* log for HEAD */
