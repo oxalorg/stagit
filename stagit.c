@@ -461,6 +461,7 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 	git_patch *patch;
 	size_t nhunks, nhunklines, changed, add, del, total, i, j, k;
 	char linestr[80];
+	int c;
 
 	printcommit(fp, ci);
 
@@ -480,7 +481,21 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 	for (i = 0; i < ci->ndeltas; i++) {
 		delta = git_patch_get_delta(ci->deltas[i]->patch);
 
-		fprintf(fp, "<tr><td><a href=\"#h%zu\">", i);
+		switch (delta->status) {
+		case GIT_DELTA_ADDED:      c = 'A'; break;
+		case GIT_DELTA_COPIED:     c = 'C'; break;
+		case GIT_DELTA_DELETED:    c = 'D'; break;
+		case GIT_DELTA_MODIFIED:   c = 'M'; break;
+		case GIT_DELTA_RENAMED:    c = 'R'; break;
+		case GIT_DELTA_TYPECHANGE: c = 'T'; break;
+		default:                   c = ' '; break;
+		}
+		if (c == ' ')
+			fprintf(fp, "<tr><td>%c", c);
+		else
+			fprintf(fp, "<tr><td class=\"%c\">%c", c, c);
+
+		fprintf(fp, "</td><td><a href=\"#h%zu\">", i);
 		xmlencode(fp, delta->old_file.path, strlen(delta->old_file.path));
 		if (strcmp(delta->old_file.path, delta->new_file.path)) {
 			fputs(" -&gt; ", fp);
