@@ -122,7 +122,9 @@ commitinfo_getstats(struct commitinfo *ci)
 
 	if (git_diff_find_init_options(&fopts, GIT_DIFF_FIND_OPTIONS_VERSION))
 		goto err;
-	fopts.flags |= GIT_DIFF_FIND_RENAMES | GIT_DIFF_FIND_COPIES;
+	/* find renames and copies, exact matches (no heuristic) for renames. */
+	fopts.flags |= GIT_DIFF_FIND_RENAMES | GIT_DIFF_FIND_COPIES |
+	               GIT_DIFF_FIND_EXACT_MATCH_ONLY;
 	if (git_diff_find_similar(ci->diff, &fopts))
 		goto err;
 
