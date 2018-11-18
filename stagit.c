@@ -114,7 +114,9 @@ commitinfo_getstats(struct commitinfo *ci)
 	}
 
 	git_diff_init_options(&opts, GIT_DIFF_OPTIONS_VERSION);
-	opts.flags |= GIT_DIFF_DISABLE_PATHSPEC_MATCH;
+	opts.flags |= GIT_DIFF_DISABLE_PATHSPEC_MATCH |
+	              GIT_DIFF_IGNORE_SUBMODULES |
+		      GIT_DIFF_INCLUDE_TYPECHANGE;
 	if (git_diff_tree_to_tree(&(ci->diff), repo, ci->parent_tree, ci->commit_tree, &opts))
 		goto err;
 
