@@ -17,12 +17,11 @@ img {
 	border: 0;
 }
 
-a {
+a.d,
+a.h,
+a.i,
+a.line {
 	text-decoration: none;
-}
-
-a:hover {
-	text-decoration: underline;
 }
 
 #blob a {
