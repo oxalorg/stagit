@@ -147,7 +147,6 @@ err:
 int
 main(int argc, char *argv[])
 {
-	const git_error *e = NULL;
 	FILE *fp;
 	char path[PATH_MAX], repodirabs[PATH_MAX + 1];
 	const char *repodir;
@@ -174,8 +173,7 @@ main(int argc, char *argv[])
 
 		if (git_repository_open_ext(&repo, repodir,
 		    GIT_REPOSITORY_OPEN_NO_SEARCH, NULL)) {
-			e = giterr_last();
-			fprintf(stderr, "%s: %s\n", argv[0], e->message);
+			fprintf(stderr, "%s: cannot open repository\n", argv[0]);
 			ret = 1;
 			continue;
 		}

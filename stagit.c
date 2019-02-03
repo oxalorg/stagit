@@ -1054,7 +1054,6 @@ main(int argc, char *argv[])
 {
 	git_object *obj = NULL;
 	const git_oid *head = NULL;
-	const git_error *e = NULL;
 	mode_t mask;
 	FILE *fp, *fpread;
 	char path[PATH_MAX], repodirabs[PATH_MAX + 1], *p;
@@ -1101,8 +1100,7 @@ main(int argc, char *argv[])
 
 	if (git_repository_open_ext(&repo, repodir,
 		GIT_REPOSITORY_OPEN_NO_SEARCH, NULL) < 0) {
-		e = giterr_last();
-		fprintf(stderr, "%s: %s\n", argv[0], e->message);
+		fprintf(stderr, "%s: cannot open repository\n", argv[0]);
 		return 1;
 	}
 
