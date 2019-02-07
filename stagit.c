@@ -606,7 +606,6 @@ writelog(FILE *fp, const git_oid *oid)
 
 	git_revwalk_new(&w, repo);
 	git_revwalk_push(w, oid);
-	git_revwalk_sorting(w, GIT_SORT_TIME);
 	git_revwalk_simplify_first_parent(w);
 
 	while (!git_revwalk_next(&id, w)) {
@@ -736,7 +735,6 @@ writeatom(FILE *fp)
 
 	git_revwalk_new(&w, repo);
 	git_revwalk_push_head(w);
-	git_revwalk_sorting(w, GIT_SORT_TIME);
 	git_revwalk_simplify_first_parent(w);
 
 	for (i = 0; i < m && !git_revwalk_next(&id, w); i++) {
