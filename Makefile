@@ -2,6 +2,7 @@ include config.mk
 
 NAME = stagit
 VERSION = 0.9
+
 SRC = \
 	stagit.c\
 	stagit-index.c
@@ -64,14 +65,14 @@ install: all
 	cp -f ${BIN} ${DESTDIR}${PREFIX}/bin
 	for f in ${BIN}; do chmod 755 ${DESTDIR}${PREFIX}/bin/$$f; done
 	# installing example files.
-	mkdir -p ${DESTDIR}${PREFIX}/share/${NAME}
+	mkdir -p ${DESTDIR}${DOCPREFIX}
 	cp -f style.css\
 		favicon.png\
 		logo.png\
 		example_create.sh\
 		example_post-receive.sh\
 		README\
-		${DESTDIR}${PREFIX}/share/${NAME}
+		${DESTDIR}${DOCPREFIX}
 	# installing manual pages.
 	mkdir -p ${DESTDIR}${MANPREFIX}/man1
 	cp -f ${MAN1} ${DESTDIR}${MANPREFIX}/man1
@@ -82,13 +83,13 @@ uninstall:
 	for f in ${BIN}; do rm -f ${DESTDIR}${PREFIX}/bin/$$f; done
 	# removing example files.
 	rm -f \
-		${DESTDIR}${PREFIX}/share/${NAME}/style.css\
-		${DESTDIR}${PREFIX}/share/${NAME}/favicon.png\
-		${DESTDIR}${PREFIX}/share/${NAME}/logo.png\
-		${DESTDIR}${PREFIX}/share/${NAME}/example_create.sh\
-		${DESTDIR}${PREFIX}/share/${NAME}/example_post-receive.sh\
-		${DESTDIR}${PREFIX}/share/${NAME}/README
-	-rmdir ${DESTDIR}${PREFIX}/share/${NAME}
+		${DESTDIR}${DOCPREFIX}/style.css\
+		${DESTDIR}${DOCPREFIX}/favicon.png\
+		${DESTDIR}${DOCPREFIX}/logo.png\
+		${DESTDIR}${DOCPREFIX}/example_create.sh\
+		${DESTDIR}${DOCPREFIX}/example_post-receive.sh\
+		${DESTDIR}${DOCPREFIX}/README
+	-rmdir ${DESTDIR}${DOCPREFIX}
 	# removing manual pages.
 	for m in ${MAN1}; do rm -f ${DESTDIR}${MANPREFIX}/man1/$$m; done
 
