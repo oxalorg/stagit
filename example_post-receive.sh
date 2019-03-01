@@ -14,7 +14,7 @@ export LC_CTYPE="en_US.UTF-8"
 
 name="$1"
 if test "${name}" = ""; then
-	name=$(basename $(pwd))
+	name=$(basename "$(pwd)")
 fi
 
 # config

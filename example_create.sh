@@ -30,7 +30,7 @@ for dir in "${reposdir}/"*/; do
 	printf "%s... " "${d}"
 
 	mkdir -p "${curdir}/${d}"
-	cd "${curdir}/${d}"
+	cd "${curdir}/${d}" || continue
 	stagit -c ".cache" "${reposdir}/${r}"
 
 	# symlinks
