@@ -76,7 +76,7 @@ joinpath(char *buf, size_t bufsiz, const char *path, const char *path2)
 
 	r = snprintf(buf, bufsiz, "%s%s%s",
 		path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
-	if (r == -1 || (size_t)r >= bufsiz)
+	if (r < 0 || (size_t)r >= bufsiz)
 		errx(1, "path truncated: '%s%s%s'",
 			path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
 }
@@ -616,7 +616,7 @@ writelog(FILE *fp, const git_oid *oid)
 
 		git_oid_tostr(oidstr, sizeof(oidstr), &id);
 		r = snprintf(path, sizeof(path), "commit/%s.html", oidstr);
-		if (r == -1 || (size_t)r >= sizeof(path))
+		if (r < 0 || (size_t)r >= sizeof(path))
 			errx(1, "path truncated: 'commit/%s.html'", oidstr);
 		r = access(path, F_OK);
 
@@ -856,7 +856,7 @@ writefilestree(FILE *fp, git_tree *tree, const char *path)
 
 		r = snprintf(filepath, sizeof(filepath), "file/%s.html",
 		         entrypath);
-		if (r == -1 || (size_t)r >= sizeof(filepath))
+		if (r < 0 || (size_t)r >= sizeof(filepath))
 			errx(1, "path truncated: 'file/%s.html'", entrypath);
 
 		if (!git_tree_entry_to_object(&obj, repo, entry)) {

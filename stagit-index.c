@@ -28,7 +28,7 @@ joinpath(char *buf, size_t bufsiz, const char *path, const char *path2)
 
 	r = snprintf(buf, bufsiz, "%s%s%s",
 		path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
-	if (r == -1 || (size_t)r >= bufsiz)
+	if (r < 0 || (size_t)r >= bufsiz)
 		errx(1, "path truncated: '%s%s%s'",
 			path, path[0] && path[strlen(path) - 1] != '/' ? "/" : "", path2);
 }
