@@ -532,9 +532,15 @@ printshowfile(FILE *fp, struct commitinfo *ci)
 	for (i = 0; i < ci->ndeltas; i++) {
 		patch = ci->deltas[i]->patch;
 		delta = git_patch_get_delta(patch);
-		fprintf(fp, "<b>diff --git a/<a id=\"h%zu\" href=\"%sfile/%s.html\">%s</a> b/<a href=\"%sfile/%s.html\">%s</a></b>\n",
-			i, relpath, delta->old_file.path, delta->old_file.path,
-			relpath, delta->new_file.path, delta->new_file.path);
+		fprintf(fp, "<b>diff --git a/<a id=\"h%zu\" href=\"%sfile/", i, relpath);
+		xmlencode(fp, delta->old_file.path, strlen(delta->old_file.path));
+		fputs(".html\">", fp);
+		xmlencode(fp, delta->old_file.path, strlen(delta->old_file.path));
+		fprintf(fp, "</a> b/<a href=\"%sfile/", relpath);
+		xmlencode(fp, delta->new_file.path, strlen(delta->new_file.path));
+		fprintf(fp, ".html\">");
+		xmlencode(fp, delta->new_file.path, strlen(delta->new_file.path));
+		fprintf(fp, "</a></b>\n");
 
 		/* check binary data */
 		if (delta->flags & GIT_DIFF_FLAG_BINARY) {
@@ -881,7 +887,9 @@ writefilestree(FILE *fp, git_tree *tree, const char *path)
 
 			fputs("<tr><td>", fp);
 			fputs(filemode(git_tree_entry_filemode(entry)), fp);
-			fprintf(fp, "</td><td><a href=\"%s%s\">", relpath, filepath);
+			fprintf(fp, "</td><td><a href=\"%s", relpath);
+			xmlencode(fp, filepath, strlen(filepath));
+			fputs("\">", fp);
 			xmlencode(fp, entrypath, strlen(entrypath));
 			fputs("</a></td><td class=\"num\" align=\"right\">", fp);
 			if (lc > 0)
