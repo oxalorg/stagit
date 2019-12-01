@@ -1,7 +1,20 @@
-include config.mk
+.POSIX:
 
 NAME = stagit
 VERSION = 0.9.2
+
+# paths
+PREFIX = /usr/local
+MANPREFIX = ${PREFIX}/man
+DOCPREFIX = ${PREFIX}/share/doc/${NAME}
+
+LIBGIT_INC = -I/usr/local/include
+LIBGIT_LIB = -L/usr/local/lib -lgit2
+
+# use system flags.
+STAGIT_CFLAGS = ${LIBGIT_INC} ${CFLAGS}
+STAGIT_LDFLAGS = ${LIBGIT_LIB} ${LDFLAGS}
+STAGIT_CPPFLAGS = -D_XOPEN_SOURCE=700 -D_DEFAULT_SOURCE -D_BSD_SOURCE
 
 SRC = \
 	stagit.c\
@@ -31,16 +44,16 @@ OBJ = ${SRC:.c=.o} ${COMPATOBJ}
 all: ${BIN}
 
 .o:
-	${CC} ${LDFLAGS} -o $@ ${LIBS}
+	${CC} -o $@ ${LDFLAGS}
 
 .c.o:
-	${CC} -c ${CFLAGS} ${CPPFLAGS} -o $@ -c $<
+	${CC} -o $@ -c $< ${STAGIT_CFLAGS} ${STAGIT_CPPFLAGS}
 
 dist:
 	rm -rf ${NAME}-${VERSION}
 	mkdir -p ${NAME}-${VERSION}
 	cp -f ${MAN1} ${HDR} ${SRC} ${COMPATSRC} ${DOC} \
-		Makefile config.mk favicon.png logo.png style.css \
+		Makefile favicon.png logo.png style.css \
 		example_create.sh example_post-receive.sh \
 		${NAME}-${VERSION}
 	# make tarball
@@ -48,13 +61,13 @@ dist:
 		gzip -c > ${NAME}-${VERSION}.tar.gz
 	rm -rf ${NAME}-${VERSION}
 
-${OBJ}: config.mk ${HDR}
+${OBJ}: ${HDR}
 
 stagit: stagit.o ${COMPATOBJ}
-	${CC} -o $@ stagit.o ${COMPATOBJ} ${LDFLAGS}
+	${CC} -o $@ stagit.o ${COMPATOBJ} ${STAGIT_LDFLAGS}
 
 stagit-index: stagit-index.o ${COMPATOBJ}
-	${CC} -o $@ stagit-index.o ${COMPATOBJ} ${LDFLAGS}
+	${CC} -o $@ stagit-index.o ${COMPATOBJ} ${STAGIT_LDFLAGS}
 
 clean:
 	rm -f ${BIN} ${OBJ} ${NAME}-${VERSION}.tar.gz
