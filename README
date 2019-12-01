@@ -1,7 +1,9 @@
 stagit
-======
+------
 
-static git page generator
+static git page generator.
+
+It generates static HTML pages for a git repository.
 
 
 Usage
@@ -17,8 +19,8 @@ Make index file for repositories:
 	$ stagit-index repodir1 repodir2 repodir3 > index.html
 
 
-Install
--------
+Build and install
+-----------------
 
 $ make
 # make install
@@ -27,10 +29,10 @@ $ make
 Dependencies
 ------------
 
-- libgit2 (v0.22+).
-- libc (tested with OpenBSD, FreeBSD, NetBSD, Linux: glibc and musl).
 - C compiler (C99).
-- make
+- libc (tested with OpenBSD, FreeBSD, NetBSD, Linux: glibc and musl).
+- libgit2 (v0.22+).
+- POSIX make (optional).
 
 
 Documentation
