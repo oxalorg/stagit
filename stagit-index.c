@@ -159,6 +159,9 @@ main(int argc, char *argv[])
 	git_libgit2_init();
 
 #ifdef __OpenBSD__
+	for (i = 1; i < argc; i++)
+		if (unveil(argv[i], "r") == -1)
+			err(1, "unveil: %s", argv[i]);
 	if (pledge("stdio rpath", NULL) == -1)
 		err(1, "pledge");
 #endif

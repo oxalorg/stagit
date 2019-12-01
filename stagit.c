@@ -1095,6 +1095,13 @@ main(int argc, char *argv[])
 	git_libgit2_init();
 
 #ifdef __OpenBSD__
+	if (unveil(repodir, "r") == -1)
+		err(1, "unveil: %s", repodir);
+	if (unveil(".", "rwc") == -1)
+		err(1, "unveil: .");
+	if (cachefile && unveil(cachefile, "rwc") == -1)
+		err(1, "unveil: %s", cachefile);
+
 	if (cachefile) {
 		if (pledge("stdio rpath wpath cpath fattr", NULL) == -1)
 			err(1, "pledge");
