@@ -17,6 +17,10 @@ img {
 	border: 0;
 }
 
+a:target {
+	background-color: #ccc;
+}
+
 a.d,
 a.h,
 a.i,
