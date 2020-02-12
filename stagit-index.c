@@ -1,17 +1,12 @@
-#include <sys/stat.h>
-
 #include <err.h>
-#include <errno.h>
-#include <inttypes.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include <git2.h>
-
-#include "compat.h"
 
 static git_repository *repo;
 
