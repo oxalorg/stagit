@@ -694,11 +694,11 @@ printcommitatom(FILE *fp, struct commitinfo *ci)
 		xmlencode(fp, ci->summary, strlen(ci->summary));
 		fputs("</title>\n", fp);
 	}
-	fprintf(fp, "<link rel=\"alternate\" type=\"text/html\" href=\"commit/%s.html\" />",
+	fprintf(fp, "<link rel=\"alternate\" type=\"text/html\" href=\"commit/%s.html\" />\n",
 	        ci->oid);
 
 	if (ci->author) {
-		fputs("<author><name>", fp);
+		fputs("<author>\n<name>", fp);
 		xmlencode(fp, ci->author->name, strlen(ci->author->name));
 		fputs("</name>\n<email>", fp);
 		xmlencode(fp, ci->author->email, strlen(ci->author->email));
