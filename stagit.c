@@ -365,6 +365,7 @@ xmlencode(FILE *fp, const char *s, size_t len)
 
 	for (i = 0; *s && i < len; s++, i++) {
 		switch(*s) {
+		case '\\': fputc(*++s,     fp); i++; break;
 		case '<':  fputs("&lt;",   fp); break;
 		case '>':  fputs("&gt;",   fp); break;
 		case '\'': fputs("&#39;",  fp); break;
