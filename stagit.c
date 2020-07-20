@@ -797,7 +797,7 @@ printcommitatom(FILE *fp, struct commitinfo *ci, const char *tag)
 	}
 	if (ci->summary) {
 		fputs("<title type=\"text\">", fp);
-		if (tag) {
+		if (tag && tag[0]) {
 			fputs("[", fp);
 			xmlencode(fp, tag, strlen(tag));
 			fputs("] ", fp);
