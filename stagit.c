@@ -976,7 +976,6 @@ int
 writefilestree(FILE *fp, git_tree *tree, const char *path)
 {
 	const git_tree_entry *entry = NULL;
-	git_submodule *module = NULL;
 	git_object *obj = NULL;
 	git_off_t filesize;
 	const char *entryname;
@@ -1029,11 +1028,11 @@ writefilestree(FILE *fp, git_tree *tree, const char *path)
 				fprintf(fp, "%juB", (uintmax_t)filesize);
 			fputs("</td></tr>\n", fp);
 			git_object_free(obj);
-		} else if (!git_submodule_lookup(&module, repo, entryname)) {
+		} else if (git_tree_entry_type(entry) == GIT_OBJ_COMMIT) {
+			/* commit object in tree is a submodule */
 			fprintf(fp, "<tr><td>m---------</td><td><a href=\"%sfile/.gitmodules.html\">",
 				relpath);
 			xmlencode(fp, entrypath, strlen(entrypath));
-			git_submodule_free(module);
 			fputs("</a></td><td class=\"num\" align=\"right\"></td></tr>\n", fp);
 		}
 	}
