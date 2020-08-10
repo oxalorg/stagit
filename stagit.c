@@ -865,21 +865,17 @@ writeatom(FILE *fp, int all)
 			commitinfo_free(ci);
 		}
 		git_revwalk_free(w);
-	} else {
+	} else if (getrefs(&ris, &refcount) != -1) {
 		/* references: tags */
-		if (getrefs(&ris, &refcount) != -1) {
-			for (i = 0; i < refcount; i++) {
-				if (!git_reference_is_tag(ris[i].ref))
-					continue;
-
+		for (i = 0; i < refcount; i++) {
+			if (git_reference_is_tag(ris[i].ref))
 				printcommitatom(fp, ris[i].ci,
 				                git_reference_shorthand(ris[i].ref));
 
-				commitinfo_free(ris[i].ci);
-				git_reference_free(ris[i].ref);
-			}
-			free(ris);
+			commitinfo_free(ris[i].ci);
+			git_reference_free(ris[i].ref);
 		}
+		free(ris);
 	}
 
 	fputs("</feed>\n", fp);
